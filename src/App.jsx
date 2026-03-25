@@ -3571,7 +3571,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           margin-bottom: 2rem;
           position: relative;
           overflow: hidden;
-          color: #1a1a2e;
+          color: #ffffff;
         }
         .welcome-card::before {
           content: '';
@@ -3725,7 +3725,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .plan-features li { padding: 0.5rem 0; color: var(--text-secondary); font-size: 0.95rem; }
         .savings-badge { 
           background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
-          color: #1a1a2e; 
+          color: #ffffff; 
           padding: 0.5rem 1rem; 
           border-radius: 8px; 
           font-size: 0.85rem; 
@@ -3749,7 +3749,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .sim-page { 
           min-height: 100vh; 
           padding-top: 65px; 
-          background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+          background: #ffffff;
           color: #1e293b;
         }
         .sim-page .navbar { background: rgba(255, 255, 255, 0.95); border-bottom: 1px solid #dee2e6; }
@@ -4340,9 +4340,9 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           border-radius: 8px;
           font-size: 0.82rem;
           font-weight: 700;
-          color: #1a1a2e;
+          color: #ffffff;
         }
-        .sidebar-week-total { opacity: 0.7; font-weight: 400; }
+        .sidebar-week-total { opacity: 0.8; font-weight: 400; }
         .sidebar-section-label {
           font-size: 0.65rem;
           font-weight: 700;
@@ -4408,7 +4408,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           background: linear-gradient(135deg, #ED1B2F 0%, #c41424 100%);
           border: none;
           border-radius: 10px;
-          color: #1a1a2e;
+          color: #ffffff;
           font-size: 0.82rem;
           font-weight: 700;
           cursor: pointer;
@@ -4421,6 +4421,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           padding: 1.5rem 2rem;
           overflow-y: auto;
           max-height: calc(100vh - 60px);
+          background: #ffffff;
         }
         .content-section { max-width: 900px; }
         .content-title {
@@ -4443,10 +4444,11 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
         @media (max-width: 700px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
         .kpi-card {
-          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-          border: 1px solid rgba(237, 27, 47, 0.15);
+          background: #ffffff;
+          border: 1px solid #e9ecef;
           border-radius: 14px;
           padding: 1.1rem;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.06);
         }
         .kpi-label { font-size: 0.65rem; color: #6b7280; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
         .kpi-value { font-size: 1.5rem; font-weight: 700; color: #1a1a2e; margin-bottom: 0.5rem; }
@@ -5170,7 +5172,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
           border: none;
           border-radius: 8px;
-          color: #1a1a2e;
+          color: #ffffff;
           font-weight: 600;
           cursor: pointer;
         }
@@ -5258,7 +5260,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           font-size: 1rem;
           background: linear-gradient(135deg, #ED1B2F 0%, #c41424 100%);
           border: none;
-          color: #1a1a2e;
+          color: #ffffff;
           border-radius: 12px;
           font-weight: 600;
           cursor: pointer;
@@ -5846,7 +5848,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           font-size: 1rem; 
           background: linear-gradient(135deg, #ED1B2F 0%, #c41424 100%);
           border: none;
-          color: #1a1a2e;
+          color: #ffffff;
           border-radius: 12px;
           font-weight: 600;
           cursor: pointer;
@@ -5977,7 +5979,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           background: linear-gradient(135deg, #ED1B2F 0%, #c41424 100%) !important;
           border: none !important;
           border-radius: 12px;
-          color: #1a1a2e;
+          color: #ffffff;
           cursor: pointer;
           transition: transform 0.2s, box-shadow 0.2s;
         }
@@ -6212,7 +6214,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           flex: 1;
           background: var(--accent-primary);
           border: none;
-          color: #1a1a2e;
+          color: #ffffff;
           padding: 8px 16px;
           border-radius: 8px;
           font-size: 0.85rem;
@@ -6805,7 +6807,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
         .btn-print:hover {
           border-color: #ED1B2F;
-          color: #1a1a2efff;
+          color: #fffffffff;
           background: rgba(237, 27, 47, 0.1);
         }
         
@@ -7117,7 +7119,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
         .admin-nav-btn.active {
           background: rgba(237, 27, 47, 0.3);
-          color: #1a1a2e;
+          color: #ffffff;
           border-left: 3px solid #ED1B2F;
         }
         .admin-nav-btn span { font-size: 1.1rem; }
@@ -7368,7 +7370,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .admin-btn:hover { background: #f8fafc; border-color: #495057; }
         .admin-btn.primary {
           background: #ED1B2F;
-          color: #1a1a2e;
+          color: #ffffff;
           border-color: #ED1B2F;
         }
         .admin-btn.primary:hover { background: #b91425; }
@@ -7482,7 +7484,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .tester-badge {
           display: inline-block;
           background: linear-gradient(135deg, #10b981, #059669);
-          color: #1a1a2e;
+          color: #ffffff;
           font-size: 0.65rem;
           font-weight: 600;
           padding: 0.15rem 0.4rem;
@@ -7546,7 +7548,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           height: 36px;
           border-radius: 50%;
           background: linear-gradient(135deg, #ED1B2F, #c41424);
-          color: #1a1a2e;
+          color: #ffffff;
           display: flex;
           align-items: center;
           justify-content: center;
