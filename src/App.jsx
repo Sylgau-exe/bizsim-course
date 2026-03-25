@@ -3342,7 +3342,6 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
   return (
     <div className="app">
       <style>{`
-      <style>{`
         :root {
           --bg-primary: #ffffff;
           --bg-secondary: #f8f9fa;
