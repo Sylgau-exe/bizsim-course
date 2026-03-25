@@ -205,7 +205,7 @@ const RiskRadar = ({ risks }) => {
             cy={centerY}
             r={radius * scale}
             fill="none"
-            stroke="#2a2a40"
+            stroke="#dee2e6"
             strokeWidth="1"
           />
         ))}
@@ -218,7 +218,7 @@ const RiskRadar = ({ risks }) => {
             y1={centerY}
             x2={centerX + radius * Math.cos(angle)}
             y2={centerY + radius * Math.sin(angle)}
-            stroke="#2a2a40"
+            stroke="#dee2e6"
             strokeWidth="1"
           />
         ))}
@@ -3761,7 +3761,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .sim-select-page {
           min-height: 100vh;
           padding-top: 65px;
-          background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #1a1a2e 50%, #ffffff 100%);
           color: #1a1a2efff;
           position: relative;
           overflow: hidden;
@@ -3795,7 +3795,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* Industry Card */
         .industry-card {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 20px;
           overflow: hidden;
@@ -3913,7 +3913,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
         .sim-stats-bar {
           display: inline-flex;
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 16px;
           padding: 1rem 2.5rem;
@@ -4233,7 +4233,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         /* Game Playing - LIGHT THEME */
         .sim-playing { 
           padding: 1.5rem; 
-          background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%); 
+          background: linear-gradient(135deg, #ffffff 0%, #1a1a2e 50%, #ffffff 100%); 
           min-height: 100vh; 
           color: #1a1a2efff;
           position: relative;
@@ -4311,7 +4311,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* SIDEBAR */
         .game-sidebar {
-          background: linear-gradient(180deg, #131325 0%, #1a1a30 100%);
+          background: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
           border-right: 1px solid rgba(237, 27, 47, 0.15);
           padding: 1rem 0;
           display: flex;
@@ -4443,14 +4443,14 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
         @media (max-width: 700px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
         .kpi-card {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 14px;
           padding: 1.1rem;
         }
         .kpi-label { font-size: 0.65rem; color: #6b7280; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
         .kpi-value { font-size: 1.5rem; font-weight: 700; color: #1a1a2e; margin-bottom: 0.5rem; }
-        .kpi-bar { height: 5px; background: #2a2a40; border-radius: 3px; overflow: hidden; }
+        .kpi-bar { height: 5px; background: #dee2e6; border-radius: 3px; overflow: hidden; }
         .kpi-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
         .kpi-subtext { font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; }
         
@@ -4479,7 +4479,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* Overview Timeline */
         .overview-timeline {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 14px;
           padding: 1.25rem;
@@ -4489,7 +4489,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
 
         /* Team Control */
         .team-control-card {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 14px;
           padding: 2rem;
@@ -4513,7 +4513,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           gap: 1rem;
         }
         .team-stat-card {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 14px;
           padding: 1.25rem;
@@ -4523,7 +4523,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
 
         /* Resource Cards */
         .resource-card {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 14px;
           padding: 1.25rem;
@@ -4536,7 +4536,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           align-items: center;
           gap: 1rem;
           padding: 1rem 1.25rem;
-          background: linear-gradient(135deg, #252540 0%, #1e1e32 100%);
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
           border: 1px solid #3a3a50;
           border-radius: 12px;
           cursor: pointer;
@@ -4571,7 +4571,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
         .action-toast.success { background: linear-gradient(135deg, #065f46, #064e3b); border: 1px solid #10b981; color: #6ee7b7; }
         .action-toast.warn { background: linear-gradient(135deg, #78350f, #713f12); border: 1px solid #f59e0b; color: #fde68a; }
-        .action-toast.info { background: linear-gradient(135deg, #1e3a5f, #1e3a8a); border: 1px solid #3b82f6; color: #93c5fd; }
+        .action-toast.info { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #3b82f6; color: #93c5fd; }
         @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
         @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(-50%) translateY(-10px); } }
 
@@ -4582,7 +4582,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           align-items: center;
           gap: 1rem;
           padding: 1rem 1.25rem;
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid #3a3a50;
           border-radius: 12px;
           cursor: pointer;
@@ -4609,7 +4609,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
 
         /* Health Report */
         .health-radar-card, .health-metrics-card, .risks-report-card, .stakeholder-report-card, .milestones-report, .progress-report-card {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 14px;
           padding: 1.25rem;
@@ -4642,7 +4642,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .stat-status.neutral { color: #9ca3af; }
         .stat-progress-bar {
           height: 6px;
-          background: #2a2a40;
+          background: #dee2e6;
           border-radius: 3px;
           overflow: hidden;
         }
@@ -4665,7 +4665,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* DECISIONS PANEL */
         .decisions-panel {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 20px;
           padding: 1.5rem;
@@ -4678,7 +4678,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
         
         .decision-card {
-          background: linear-gradient(135deg, #252540 0%, #1e1e32 100%);
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
           border: 1px solid #3a3a50;
           border-radius: 12px;
           padding: 1rem;
@@ -4705,7 +4705,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
         .decision-btn {
           padding: 0.5rem 1rem;
-          background: linear-gradient(135deg, #3a3a55 0%, #2a2a45 100%);
+          background: linear-gradient(135deg, #3a3a55 0%, #e9ecef 100%);
           border: 1px solid #4a4a60;
           border-radius: 8px;
           color: #1a1a2efff;
@@ -4765,7 +4765,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .focus-bar {
           flex: 1;
           height: 8px;
-          background: #2a2a40;
+          background: #dee2e6;
           border-radius: 4px;
           overflow: hidden;
         }
@@ -4795,7 +4795,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* PROGRESS SUMMARY */
         .progress-summary {
-          background: linear-gradient(135deg, #1a1a2e 0%, #252540 100%);
+          background: linear-gradient(135deg, #1a1a2e 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.2);
           border-radius: 12px;
           padding: 1rem;
@@ -4850,7 +4850,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           padding: 0.75rem;
           border-radius: 10px;
           border: 1px solid #3a3a50;
-          background: #1e1e32;
+          background: #ffffff;
           cursor: pointer;
           transition: all 0.2s;
         }
@@ -4873,7 +4873,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
         .meeting-chip {
           padding: 0.5rem 0.75rem;
-          background: #252540;
+          background: #f8f9fa;
           border: 1px solid #3a3a50;
           border-radius: 20px;
           color: #d1d5db;
@@ -4882,7 +4882,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           transition: all 0.2s;
         }
         .meeting-chip:hover:not(:disabled) {
-          background: #2a2a50;
+          background: #ced4da;
           border-color: #ED1B2F;
         }
         .meeting-chip.done {
@@ -4901,7 +4901,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           overflow-y: auto;
         }
         .status-card, .team-panel, .alert-card, .metrics-card, .stakeholder-card, .risks-card, .milestones-card {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 16px;
           padding: 1.25rem;
@@ -4915,7 +4915,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* RISK RADAR */
         .radar-card {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 16px;
           padding: 1rem;
@@ -4951,7 +4951,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           justify-content: space-between;
           align-items: center;
           padding: 0.5rem 0;
-          border-bottom: 1px solid #2a2a40;
+          border-bottom: 1px solid #dee2e6;
         }
         .status-item:last-child { border-bottom: none; }
         .status-item span { font-size: 0.85rem; color: #9ca3af; }
@@ -4975,7 +4975,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .metric-bar-container {
           flex: 1;
           height: 6px;
-          background: #2a2a40;
+          background: #dee2e6;
           border-radius: 3px;
           overflow: hidden;
         }
@@ -5004,7 +5004,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           align-items: flex-start;
           gap: 0.75rem;
           padding: 0.75rem;
-          background: #252540;
+          background: #f8f9fa;
           border-radius: 10px;
           border-left: 3px solid #3a3a50;
           position: relative;
@@ -5058,7 +5058,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           align-items: center;
           gap: 0.75rem;
           padding: 0.6rem 0.75rem;
-          background: #252540;
+          background: #f8f9fa;
           border-radius: 8px;
         }
         .risk-level {
@@ -5090,7 +5090,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           align-items: center;
           gap: 0.75rem;
           padding: 0.6rem 0.75rem;
-          background: #252540;
+          background: #f8f9fa;
           border-radius: 8px;
           opacity: 0.6;
         }
@@ -5152,7 +5152,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* ALERT CARD */
         .alert-card.critical {
-          background: linear-gradient(135deg, #3a1a1a 0%, #2a1515 100%);
+          background: linear-gradient(135deg, #3a1a1a 0%, #fef2f2 100%);
           border-color: rgba(239, 68, 68, 0.4);
         }
         .alert-header {
@@ -5177,7 +5177,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* TIMELINE */
         .timeline-panel {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 16px;
           padding: 1.25rem;
@@ -5197,7 +5197,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
         .timeline-bar {
           height: 12px;
-          background: #2a2a40;
+          background: #dee2e6;
           border-radius: 6px;
           position: relative;
           margin-bottom: 1rem;
@@ -5272,7 +5272,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* ENHANCED EVENT MODAL */
         .event-modal.enhanced {
-          background: linear-gradient(135deg, #1a1a2e 0%, #252540 100%);
+          background: linear-gradient(135deg, #1a1a2e 0%, #f8f9fa 100%);
           border: 1px solid rgba(239, 68, 68, 0.3);
           border-radius: 24px;
           padding: 0;
@@ -5285,7 +5285,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           text-align: center;
         }
         .event-modal-header.critical {
-          background: linear-gradient(135deg, #3a1a1a 0%, #2a1515 100%);
+          background: linear-gradient(135deg, #3a1a1a 0%, #fef2f2 100%);
           border-bottom: 1px solid rgba(239, 68, 68, 0.2);
         }
         .event-type {
@@ -5321,7 +5321,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           margin-bottom: 1.5rem;
         }
         .impact-card {
-          background: #252540;
+          background: #f8f9fa;
           border: 1px solid #3a3a50;
           border-radius: 10px;
           padding: 0.75rem;
@@ -5347,7 +5347,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
         .event-option-card {
           padding: 1rem;
-          background: linear-gradient(135deg, #252540 0%, #1e1e32 100%);
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
           border: 2px solid #3a3a50;
           border-radius: 12px;
           cursor: pointer;
@@ -5392,7 +5392,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .option-consequences span {
           font-size: 0.7rem;
           padding: 0.2rem 0.4rem;
-          background: #2a2a40;
+          background: #dee2e6;
           border-radius: 4px;
         }
         .option-consequences span.positive { color: #10b981; background: rgba(16, 185, 129, 0.15); }
@@ -5400,14 +5400,14 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         .event-footer {
           padding: 1rem 2rem;
-          background: #1a1a28;
+          background: #ffffff;
           text-align: center;
           font-size: 0.8rem;
           color: #9ca3af;
         }
         
         .metric-card {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           backdrop-filter: blur(10px);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 20px;
@@ -5444,7 +5444,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         .gauge-bg {
           fill: none;
-          stroke: #2a2a40;
+          stroke: #dee2e6;
           stroke-width: 7;
         }
         
@@ -5681,7 +5681,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* Game Actions - Enhanced DARK THEME */
         .sim-playing .game-actions { 
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           backdrop-filter: blur(10px);
           border: 1px solid rgba(237, 27, 47, 0.2);
           border-radius: 24px; 
@@ -5696,7 +5696,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .action-row { display: flex; align-items: center; gap: 1rem; }
         .sim-playing .action-btn { 
           padding: 0.6rem 1.25rem; 
-          background: linear-gradient(135deg, #252540 0%, #1e1e32 100%); 
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); 
           border: 1px solid #3a3a50; 
           border-radius: 10px; 
           color: #1a1a2efff; 
@@ -5705,14 +5705,14 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           cursor: pointer; 
           transition: all 0.2s; 
         }
-        .sim-playing .action-btn:hover:not(:disabled) { background: linear-gradient(135deg, #2a2a50 0%, #252545 100%); border-color: var(--accent-primary); box-shadow: 0 4px 15px rgba(237, 27, 47, 0.2); }
+        .sim-playing .action-btn:hover:not(:disabled) { background: linear-gradient(135deg, #ced4da 0%, #f1f3f5 100%); border-color: var(--accent-primary); box-shadow: 0 4px 15px rgba(237, 27, 47, 0.2); }
         .sim-playing .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .sim-playing .action-label { font-family: 'JetBrains Mono', monospace; font-weight: 700; min-width: 120px; text-align: center; color: #1a1a2efff; }
         
         /* Meeting Options - Enhanced DARK THEME */
         .meeting-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
         .sim-playing .meeting-btn { 
-          background: linear-gradient(135deg, #252540 0%, #1e1e32 100%);
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
           border: 2px solid #3a3a50; 
           border-radius: 16px; 
           padding: 1rem; 
@@ -5738,14 +5738,14 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
         .sim-playing .meeting-btn:hover:not(:disabled) { 
           border-color: #ED1B2F; 
-          background: linear-gradient(135deg, #2a2a50 0%, #252545 100%);
+          background: linear-gradient(135deg, #ced4da 0%, #f1f3f5 100%);
           transform: translateY(-2px);
           box-shadow: 0 8px 25px rgba(237, 27, 47, 0.25);
         }
         .sim-playing .meeting-btn:hover:not(:disabled)::before { opacity: 1; }
         .sim-playing .meeting-btn.active { 
           border-color: #10b981; 
-          background: linear-gradient(135deg, #1a3a2e 0%, #1e3a32 100%);
+          background: linear-gradient(135deg, #ecfdf5 0%, #ecfdf5 100%);
           box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
         }
         .sim-playing .meeting-btn.active::before { 
@@ -5762,7 +5762,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .quick-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
         .sim-playing .quick-btn { 
           padding: 0.75rem 1.25rem; 
-          background: linear-gradient(135deg, #1a3a2e 0%, #1e3a32 100%);
+          background: linear-gradient(135deg, #ecfdf5 0%, #ecfdf5 100%);
           border: 2px solid rgba(16, 185, 129, 0.3); 
           border-radius: 12px; 
           color: #10b981; 
@@ -5791,7 +5791,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           height: 200px;
         }
         .sim-playing .quick-btn:hover:not(:disabled) { 
-          background: linear-gradient(135deg, #1e4035 0%, #224038 100%);
+          background: linear-gradient(135deg, #ecfdf5 0%, #ecfdf5 100%);
           border-color: #10b981;
           transform: translateY(-2px);
           box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
@@ -5808,7 +5808,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
         }
         .sim-playing .quick-btn.proto { 
-          background: linear-gradient(135deg, #2a1a3a 0%, #2e1e3a 100%);
+          background: linear-gradient(135deg, #faf5ff 0%, #faf5ff 100%);
           border-color: rgba(196, 20, 36, 0.3); 
           color: #ff6b7a; 
         }
@@ -5858,7 +5858,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         /* Event Modal - LIGHT THEME */
         .sim-playing .event-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 1rem; backdrop-filter: blur(8px); }
         .sim-playing .event-modal { 
-          background: linear-gradient(135deg, #1a1a2e 0%, #252540 100%); 
+          background: linear-gradient(135deg, #1a1a2e 0%, #f8f9fa 100%); 
           border: 1px solid rgba(237, 27, 47, 0.3); 
           border-radius: 24px; 
           padding: 2.5rem; 
@@ -5873,7 +5873,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .sim-playing .event-options { display: flex; flex-direction: column; gap: 0.6rem; }
         .sim-playing .event-option { 
           padding: 1rem 1.25rem; 
-          background: linear-gradient(135deg, #252540 0%, #1e1e32 100%); 
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); 
           border: 2px solid #3a3a50; 
           border-radius: 12px; 
           color: #1a1a2efff; 
@@ -5884,7 +5884,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           text-align: left; 
           transition: all 0.3s ease; 
         }
-        .sim-playing .event-option:hover { background: linear-gradient(135deg, #2a2a45 0%, #1e1e38 100%); border-color: #ED1B2F; transform: translateX(6px); box-shadow: 0 4px 20px rgba(237, 27, 47, 0.2); }
+        .sim-playing .event-option:hover { background: linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%); border-color: #ED1B2F; transform: translateX(6px); box-shadow: 0 4px 20px rgba(237, 27, 47, 0.2); }
         
         /* CSS Alert Bell Animation */
         .alert-bell {
@@ -6112,7 +6112,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
         .anna-panel {
-          background: linear-gradient(180deg, #0f1923 0%, #111827 100%);
+          background: linear-gradient(180deg, #f8f9fa 0%, #f8f9fa 100%);
           border: 1px solid rgba(13, 122, 110, 0.25);
           border-radius: 20px;
           width: 100%;
@@ -6275,7 +6275,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           justify-content: center; 
           min-height: 100vh; 
           padding: 2rem; 
-          background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #1a1a2e 50%, #ffffff 100%);
           position: relative;
           overflow: hidden;
         }
@@ -6446,7 +6446,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* Grade Display */
         .grade-display {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.3);
           border-radius: 20px;
           padding: 1.5rem 3rem;
@@ -6467,7 +6467,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* Mission Recap */
         .mission-recap {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 20px;
           padding: 1.5rem;
@@ -6495,7 +6495,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           .objectives-grid { grid-template-columns: 1fr; }
         }
         .objective-card {
-          background: linear-gradient(135deg, #252540 0%, #1e1e32 100%);
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
           border: 1px solid #3a3a50;
           border-radius: 12px;
           padding: 1rem;
@@ -6542,7 +6542,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* Score Breakdown */
         .score-breakdown {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 20px;
           padding: 1.5rem;
@@ -6563,7 +6563,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
         
         .breakdown-card {
-          background: linear-gradient(135deg, #252540 0%, #1e1e32 100%);
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
           border: 1px solid #3a3a50;
           border-radius: 12px;
           padding: 1rem;
@@ -6591,7 +6591,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
         .breakdown-bar {
           height: 4px;
-          background: #2a2a40;
+          background: #dee2e6;
           border-radius: 2px;
           margin-bottom: 0.5rem;
         }
@@ -6607,7 +6607,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* Performance Analysis */
         .analysis-section {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 20px;
           padding: 1.5rem;
@@ -6619,7 +6619,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           margin-bottom: 1.25rem;
         }
         .analysis-card {
-          background: linear-gradient(135deg, #252540 0%, #1e1e32 100%);
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
           border-radius: 12px;
           padding: 1rem;
           margin-bottom: 1rem;
@@ -6674,7 +6674,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* Achievements */
         .achievements-section {
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border: 1px solid rgba(237, 27, 47, 0.15);
           border-radius: 20px;
           padding: 1.5rem;
@@ -6692,7 +6692,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           justify-content: center;
         }
         .achievement-badge {
-          background: linear-gradient(135deg, #252540 0%, #1e1e32 100%);
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
           border: 1px solid #3a3a50;
           border-radius: 10px;
           padding: 0.75rem 1rem;
@@ -6772,7 +6772,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
         .btn-secondary-lg {
           padding: 1rem 2rem;
-          background: linear-gradient(135deg, #252540 0%, #1e1e32 100%);
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
           border: 1px solid #3a3a50;
           border-radius: 12px;
           color: #d1d5db;
@@ -6783,7 +6783,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
         .btn-secondary-lg:hover {
           border-color: #ED1B2F;
-          background: linear-gradient(135deg, #2a2a50 0%, #252545 100%);
+          background: linear-gradient(135deg, #ced4da 0%, #f1f3f5 100%);
         }
         
         /* Secondary Actions (Print/Share) */
@@ -6933,7 +6933,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
             border-bottom-color: #e5e7eb !important;
           }
           .analysis-list li strong {
-            color: #111827 !important;
+            color: #f8f9fa !important;
           }
           .final-score-card {
             background: #b91425 !important;
@@ -6976,7 +6976,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* Legacy end-card (keep for fallback) */
         .end-card { 
-          background: linear-gradient(135deg, #1e1e32 0%, #252540 100%);
+          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           backdrop-filter: blur(10px);
           border: 1px solid rgba(237, 27, 47, 0.3);
           border-radius: 28px; 
@@ -6998,7 +6998,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .results { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 2rem; text-align: left; }
         .result { 
           padding: 0.85rem 1rem; 
-          background: linear-gradient(135deg, #252540 0%, #1e1e32 100%); 
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); 
           border-radius: 10px; 
           display: flex; 
           align-items: center; 
@@ -7013,8 +7013,8 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .end-actions { display: flex; flex-direction: column; gap: 0.75rem; }
         .end-actions .btn-primary { background: linear-gradient(135deg, #ED1B2F 0%, #c41424 100%); border: none; color: #ffffff; box-shadow: 0 4px 20px rgba(237, 27, 47, 0.4); }
         .end-actions .btn-primary:hover { background: linear-gradient(135deg, #5558e8 0%, #7c4fe3 100%); }
-        .end-actions .btn-secondary { background: linear-gradient(135deg, #252540 0%, #1e1e32 100%); border: 1px solid #3a3a50; color: #d1d5db; }
-        .end-actions .btn-secondary:hover { background: linear-gradient(135deg, #2a2a50 0%, #252545 100%); border-color: #ED1B2F; }
+        .end-actions .btn-secondary { background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border: 1px solid #3a3a50; color: #d1d5db; }
+        .end-actions .btn-secondary:hover { background: linear-gradient(135deg, #ced4da 0%, #f1f3f5 100%); border-color: #ED1B2F; }
         .quick-btn.proto { background: rgba(196, 20, 36, 0.1); border-color: rgba(196, 20, 36, 0.25); color: #c4b5fd; }
         .quick-btn.proto:hover { background: rgba(196, 20, 36, 0.2); }
         .quick-btn.schedule { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.25); color: #fcd34d; }
