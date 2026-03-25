@@ -76,71 +76,6 @@ const t = (key, lang) => {
 
 
 // ============================================
-// API HELPER — COURSE EDITION
-// ============================================
-
-const API_BASE = '/api';
-
-const api = {
-  token: null,
-  
-  setToken(token) {
-    this.token = token;
-    if (token) {
-      localStorage.setItem('bizsim_token', token);
-    } else {
-      localStorage.removeItem('bizsim_token');
-    }
-  },
-  
-  getToken() {
-    if (!this.token) {
-      this.token = localStorage.getItem('bizsim_token');
-    }
-    return this.token;
-  },
-  
-  async request(endpoint, options = {}) {
-    const token = this.getToken();
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers
-    };
-    
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-      ...options,
-      headers
-    });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || 'Request failed');
-    }
-    
-    return data;
-  },
-  
-  // Auth
-  register: (name, email, password) => 
-    api.request('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password }) }),
-  login: (email, password) => 
-    api.request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
-  getMe: () => 
-    api.request('/auth/me'),
-  
-  // Simulations
-  recordScore: (scoreData) => 
-    api.request('/simulations/scores', { method: 'POST', body: JSON.stringify(scoreData) }),
-  getScores: () => 
-    api.request('/simulations/scores'),
-  getLeaderboard: () => 
-    api.request('/simulations/leaderboard'),
-};
-
-
-// ============================================
 // VISUAL HELPER COMPONENTS
 // ============================================
 
@@ -1019,6 +954,27 @@ const createApexInitialState = (scenario) => ({
 // MAIN APP COMPONENT — COURSE EDITION
 // ============================================
 
+
+// ============================================
+// AI ADVISOR — Anna (only server-side call needed)
+// ============================================
+
+const askAnnaAPI = async (prompt) => {
+  const response = await fetch('/api/ai-advisor', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, max_tokens: 1000 })
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'AI request failed');
+  return data.text;
+};
+
+
+// ============================================
+// MAIN APP COMPONENT — NO-DB COURSE EDITION
+// ============================================
+
 export default function BizSimCourse() {
   const [lang, setLang] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -1027,12 +983,7 @@ export default function BizSimCourse() {
     return 'en';
   });
   
-  const [currentPage, setCurrentPage] = useState('landing');
-  const [currentUser, setCurrentUser] = useState(null);
-  const [authMode, setAuthMode] = useState('login');
-  const [authError, setAuthError] = useState('');
-  const [authLoading, setAuthLoading] = useState(false);
-  const [userScores, setUserScores] = useState({ scores: [] });
+  const [currentPage, setCurrentPage] = useState('home');
   const [toast, setToast] = useState(null);
   
   // Simulation state
@@ -1051,6 +1002,9 @@ export default function BizSimCourse() {
   const [annaAdvice, setAnnaAdvice] = useState('');
   const [annaDebriefLoading, setAnnaDebriefLoading] = useState(false);
   const [annaDebrief, setAnnaDebrief] = useState('');
+  
+  // Session scores (in-memory only)
+  const [sessionScores, setSessionScores] = useState([]);
 
   const showToast = (message, type = 'info') => {
     setToast({ message, type });
@@ -1061,80 +1015,10 @@ export default function BizSimCourse() {
     localStorage.setItem('bizsim-course-lang', lang);
   }, [lang]);
 
-  // Check for existing session on load
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = api.getToken();
-      if (token) {
-        try {
-          const data = await api.getMe();
-          setCurrentUser(data.user);
-          setCurrentPage('dashboard');
-          loadUserData();
-        } catch (e) {
-          api.setToken(null);
-        }
-      }
-    };
-    checkAuth();
-  }, []);
-
-  const loadUserData = async () => {
-    try {
-      const scoresData = await api.getScores();
-      setUserScores(scoresData);
-    } catch (e) {
-      console.error('Failed to load user data:', e);
-    }
-  };
-
-  const handleLogin = async (email, password) => {
-    setAuthLoading(true);
-    setAuthError('');
-    try {
-      const data = await api.login(email, password);
-      api.setToken(data.token);
-      setCurrentUser(data.user);
-      setCurrentPage('dashboard');
-      loadUserData();
-    } catch (e) {
-      setAuthError(e.message);
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleSignup = async (name, email, password) => {
-    setAuthLoading(true);
-    setAuthError('');
-    try {
-      const data = await api.register(name, email, password);
-      api.setToken(data.token);
-      setCurrentUser(data.user);
-      setCurrentPage('dashboard');
-      showToast(lang === 'en' ? 'Welcome! 🎉' : 'Bienvenue! 🎉', 'success');
-    } catch (e) {
-      setAuthError(e.message);
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    api.setToken(null);
-    setCurrentUser(null);
-    setUserScores({ scores: [] });
-    setCurrentPage('landing');
-  };
-
-  const startSimulation = () => {
-    setSimPhase('select');
-    setCurrentPage('simulation');
-  };
-
   const selectScenario = (scenario) => {
     setSelectedScenario(scenario);
     setSimPhase('brief');
+    setCurrentPage('simulation');
   };
 
   const beginSimulation = () => {
@@ -1146,6 +1030,7 @@ export default function BizSimCourse() {
     setAnnaDebrief('');
     setAnnaDebriefLoading(false);
   };
+
 
   const handleAction = (action) => {
     setGameState(prev => {
@@ -1367,24 +1252,14 @@ export default function BizSimCourse() {
         const finalScore = calculateScore(newState);
         const grade = getGrade(finalScore);
         
-        // Record score to backend
-        if (currentUser) {
-          api.recordScore({
-            scenarioId: selectedScenario.id,
-            score: finalScore,
-            grade,
-            decisionsMade: newState.decisions.length,
-            budgetScore: Math.round(Math.max(0, (1 - newState.budget.spent / newState.budget.total)) * 200),
-            scheduleScore: Math.round(newState.week <= newState.schedule.deadline ? 200 : Math.max(0, 200 - (newState.week - newState.schedule.deadline) * 40)),
-            scopeScore: Math.round((newState.scope.completed / newState.scope.totalFeatures) * 200),
-            qualityScore: Math.round((newState.scope.quality / 100) * 200),
-            teamProcessScore: Math.round((newState.moraleHistory.reduce((a, b) => a + b, 0) / newState.moraleHistory.length / 100) * 100),
-            consistencyBonus: newState.scheduleChanges <= 1 ? 50 : newState.scheduleChanges === 2 ? 25 : 0,
-            prototypeBonus: newState.prototypesBuilt * 25,
-            prototypesBuilt: newState.prototypesBuilt,
-            scheduleChanges: newState.scheduleChanges
-          }).then(() => loadUserData()).catch(console.error);
-        }
+        // Save score in session memory
+        setSessionScores(prev => [...prev, {
+          scenarioId: selectedScenario.id,
+          scenario: selectedScenario.title,
+          score: finalScore,
+          grade,
+          completedAt: new Date().toISOString()
+        }]);
         
         setSimPhase('ended');
       }
@@ -1424,7 +1299,9 @@ export default function BizSimCourse() {
 
 
   // ============================================
-  // NAVBAR — McGill Course Theme
+
+  // ============================================
+  // NAVBAR — McGill Course Theme (no auth)
   // ============================================
   
   const renderNavbar = () => (
@@ -1437,7 +1314,7 @@ export default function BizSimCourse() {
       boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
-        onClick={() => setCurrentPage(currentUser ? 'dashboard' : 'landing')}>
+        onClick={() => { setCurrentPage('home'); setSimPhase('select'); setGameState(null); }}>
         <div style={{
           width: 36, height: 36, borderRadius: 10,
           background: 'linear-gradient(135deg, #ED1B2F 0%, #c41424 100%)',
@@ -1460,45 +1337,22 @@ export default function BizSimCourse() {
             fontSize: '0.85rem', fontWeight: 500
           }}
         >{lang === 'en' ? 'FR' : 'EN'}</button>
-        
-        {currentUser ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '0.9rem', color: '#495057' }}>{currentUser.name}</span>
-            <button
-              onClick={handleLogout}
-              style={{
-                padding: '6px 16px', borderRadius: '8px', border: '1px solid #dee2e6',
-                background: 'transparent', color: '#495057', cursor: 'pointer',
-                fontSize: '0.85rem'
-              }}
-            >{t('nav.logout', lang)}</button>
-          </div>
-        ) : (
-          <button
-            onClick={() => { setCurrentPage('auth'); setAuthMode('login'); }}
-            style={{
-              padding: '8px 20px', borderRadius: '8px', border: 'none',
-              background: 'linear-gradient(135deg, #ED1B2F 0%, #c41424 100%)',
-              color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem'
-            }}
-          >{t('nav.login', lang)}</button>
-        )}
       </div>
     </nav>
   );
 
 
   // ============================================
-  // LANDING PAGE — Course Edition
+  // HOME — Direct scenario selection
   // ============================================
   
-  const renderLanding = () => (
+  const renderHome = () => (
     <div style={{ minHeight: '100vh', background: '#ffffff' }}>
       {renderNavbar()}
       
       {/* Hero */}
       <section style={{
-        padding: '4rem 2rem', textAlign: 'center',
+        padding: '3rem 2rem', textAlign: 'center',
         background: 'linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%)'
       }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
@@ -1511,87 +1365,100 @@ export default function BizSimCourse() {
             🎯 YCBS 288 — Strategic Project Leadership
           </div>
           
-          <h1 style={{ fontSize: '2.8rem', fontWeight: 800, lineHeight: 1.15, marginBottom: '1rem', color: '#1a1a2e' }}>
-            {lang === 'en' ? 'Master Project Management' : 'Maîtrisez la gestion de projet'}
-            <br />
-            <span style={{ background: 'linear-gradient(135deg, #ED1B2F, #c41424)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              {lang === 'en' ? 'Through Real-World Simulations' : 'par des simulations réalistes'}
-            </span>
+          <h1 style={{ fontSize: '2.5rem', fontWeight: 800, lineHeight: 1.15, marginBottom: '1rem', color: '#1a1a2e' }}>
+            {lang === 'en' ? 'Project Management Simulation' : 'Simulation de gestion de projet'}
           </h1>
           
-          <p style={{ fontSize: '1.15rem', color: '#495057', lineHeight: 1.7, marginBottom: '2rem', maxWidth: '650px', margin: '0 auto 2rem' }}>
+          <p style={{ fontSize: '1.1rem', color: '#495057', lineHeight: 1.7, marginBottom: '2rem', maxWidth: '650px', margin: '0 auto 2rem' }}>
             {lang === 'en' 
-              ? 'Practice scheduling, budgeting, risk mitigation, and stakeholder management across 4 industry scenarios. AI coach Anna guides your decisions.'
-              : 'Pratiquez la planification, la budgétisation et la gestion des risques dans 4 scénarios industriels. L\'IA coach Anna guide vos décisions.'}
+              ? 'You are the PM. Balance budget, schedule, scope, quality, and team dynamics across 12 weeks. AI coach Anna is available to guide your decisions.'
+              : 'Vous êtes le GP. Équilibrez budget, calendrier, périmètre, qualité et dynamique d\'équipe pendant 12 semaines. L\'IA coach Anna guide vos décisions.'}
           </p>
           
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={() => { setCurrentPage('auth'); setAuthMode('signup'); }}
-              style={{
-                padding: '14px 32px', borderRadius: '10px', border: 'none',
-                background: 'linear-gradient(135deg, #ED1B2F 0%, #c41424 100%)',
-                color: '#fff', fontWeight: 700, fontSize: '1rem', cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(237, 27, 47, 0.3)',
-                transition: 'transform 0.2s'
-              }}>
-              {lang === 'en' ? 'Create Account & Start' : 'Créer un compte et commencer'}
-            </button>
-            <button onClick={() => { setCurrentPage('auth'); setAuthMode('login'); }}
-              style={{
-                padding: '14px 32px', borderRadius: '10px',
-                border: '1px solid #dee2e6', background: '#fff',
-                color: '#1a1a2e', fontWeight: 600, fontSize: '1rem', cursor: 'pointer'
-              }}>
-              {lang === 'en' ? 'Sign In' : 'Connexion'}
-            </button>
-          </div>
-          
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginTop: '2.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginBottom: '2rem' }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ED1B2F' }}>4</div>
               <div style={{ color: '#868e96', fontSize: '0.85rem' }}>{lang === 'en' ? 'Scenarios' : 'Scénarios'}</div>
             </div>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ED1B2F' }}>12</div>
-              <div style={{ color: '#868e96', fontSize: '0.85rem' }}>{lang === 'en' ? 'Weeks to manage' : 'Semaines à gérer'}</div>
+              <div style={{ color: '#868e96', fontSize: '0.85rem' }}>{lang === 'en' ? 'Weeks' : 'Semaines'}</div>
             </div>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ED1B2F' }}>AI</div>
-              <div style={{ color: '#868e96', fontSize: '0.85rem' }}>{lang === 'en' ? 'Coach Anna' : 'Coach Anna'}</div>
+              <div style={{ color: '#868e96', fontSize: '0.85rem' }}>Coach Anna</div>
             </div>
           </div>
         </div>
       </section>
       
-      {/* Scenarios Preview */}
-      <section style={{ padding: '3rem 2rem', background: '#ffffff' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <h2 style={{ textAlign: 'center', fontSize: '1.75rem', fontWeight: 700, marginBottom: '2rem', color: '#1a1a2e' }}>
-            {lang === 'en' ? '4 Industry Scenarios' : '4 scénarios industriels'}
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-            {Object.values(APEX_SCENARIOS).map(s => (
-              <div key={s.id} style={{
-                padding: '1.5rem', borderRadius: '12px', border: '1px solid #dee2e6',
-                background: '#fff', textAlign: 'center',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-              }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{s.icon}</div>
-                <div style={{ fontWeight: 700, marginBottom: '4px', color: '#1a1a2e' }}>{s.title}</div>
-                <div style={{ fontSize: '0.85rem', color: '#868e96' }}>{s.subtitle}</div>
-                <div style={{
-                  marginTop: '8px', display: 'inline-block',
-                  padding: '2px 10px', borderRadius: '12px',
+      {/* Scenario Cards */}
+      <section style={{ padding: '2rem 2rem 3rem', maxWidth: '960px', margin: '0 auto' }}>
+        <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '1.25rem', color: '#1a1a2e', textAlign: 'center' }}>
+          {lang === 'en' ? 'Select a Scenario to Begin' : 'Choisissez un scénario pour commencer'}
+        </h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+          {Object.values(APEX_SCENARIOS).map(s => (
+            <div key={s.id} style={{
+              background: '#fff', borderRadius: '14px', padding: '1.5rem',
+              border: '1px solid #dee2e6', boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+              cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.2s'
+            }}
+              onClick={() => selectScenario(APEX_SCENARIOS[s.id])}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 6px 20px rgba(237,27,47,0.12)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>{s.icon}</div>
+              <h3 style={{ fontWeight: 700, color: '#1a1a2e', marginBottom: '4px', fontSize: '1.1rem' }}>{s.title}</h3>
+              <p style={{ fontSize: '0.85rem', color: '#868e96', marginBottom: '8px' }}>{s.subtitle}</p>
+              <p style={{ fontSize: '0.8rem', color: '#495057', marginBottom: '12px', lineHeight: 1.5 }}>{s.description.slice(0, 100)}...</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{
+                  padding: '3px 12px', borderRadius: '12px',
                   background: s.difficultyColor + '15', color: s.difficultyColor,
                   fontSize: '0.75rem', fontWeight: 600
-                }}>{s.difficulty}</div>
+                }}>{s.difficulty}</span>
+                <span style={{ color: '#ED1B2F', fontWeight: 600, fontSize: '0.85rem' }}>
+                  {lang === 'en' ? 'Play →' : 'Jouer →'}
+                </span>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
+        
+        {/* Session scores */}
+        {sessionScores.length > 0 && (
+          <div style={{ marginTop: '2rem' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.75rem', color: '#1a1a2e' }}>
+              {lang === 'en' ? 'Your Session Results' : 'Résultats de la session'}
+            </h3>
+            <div style={{
+              background: '#fff', borderRadius: '12px', border: '1px solid #dee2e6',
+              overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+            }}>
+              {sessionScores.map((s, i) => (
+                <div key={i} style={{
+                  padding: '12px 16px', display: 'flex', alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderBottom: i < sessionScores.length - 1 ? '1px solid #f1f3f5' : 'none'
+                }}>
+                  <span style={{ fontWeight: 600, color: '#1a1a2e' }}>{s.scenario}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontWeight: 700, color: '#1a1a2e' }}>{s.score}</span>
+                    <span style={{
+                      padding: '2px 8px', borderRadius: '6px', fontWeight: 700, fontSize: '0.85rem',
+                      background: s.grade?.startsWith('A') ? '#d3f9d8' : s.grade?.startsWith('B') ? '#fff3bf' : '#ffe3e3',
+                      color: s.grade?.startsWith('A') ? '#2b8a3e' : s.grade?.startsWith('B') ? '#e67700' : '#c92a2a'
+                    }}>{s.grade}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
       
-      {/* McGill Footer */}
+      {/* Footer */}
       <footer style={{
         textAlign: 'center', padding: '2rem',
         borderTop: '1px solid #dee2e6', color: '#868e96', fontSize: '0.85rem'
@@ -1601,228 +1468,6 @@ export default function BizSimCourse() {
       </footer>
     </div>
   );
-
-
-  // ============================================
-  // AUTH — Simple email/password only
-  // ============================================
-  
-  const renderAuth = () => (
-    <div style={{ minHeight: '100vh', background: '#f8f9fa' }}>
-      {renderNavbar()}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        minHeight: 'calc(100vh - 60px)', padding: '2rem'
-      }}>
-        <div style={{
-          background: '#fff', borderRadius: '16px', padding: '2.5rem',
-          width: '100%', maxWidth: '420px',
-          border: '1px solid #dee2e6', boxShadow: '0 4px 12px rgba(0,0,0,0.06)'
-        }}>
-          <h2 style={{ marginBottom: '6px', color: '#1a1a2e', fontSize: '1.4rem' }}>
-            {authMode === 'login' ? t('auth.welcome', lang) : t('auth.createAccount', lang)}
-          </h2>
-          <p style={{ color: '#868e96', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-            {authMode === 'login' ? t('auth.signInSubtitle', lang) : t('auth.signUpSubtitle', lang)}
-          </p>
-          
-          {authError && (
-            <div style={{
-              background: '#fff5f5', color: '#c92a2a', padding: '10px 14px',
-              borderRadius: '8px', marginBottom: '1rem', fontSize: '0.85rem',
-              border: '1px solid rgba(201, 42, 42, 0.2)'
-            }}>{authError}</div>
-          )}
-          
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            const form = e.target;
-            if (authMode === 'login') {
-              handleLogin(form.email.value, form.password.value);
-            } else {
-              handleSignup(form.name.value, form.email.value, form.password.value);
-            }
-          }}>
-            {authMode === 'signup' && (
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: '6px', color: '#495057' }}>
-                  {t('auth.fullName', lang)}
-                </label>
-                <input type="text" name="name" placeholder="John Doe" required
-                  style={{
-                    width: '100%', padding: '10px 14px', borderRadius: '8px',
-                    border: '1px solid #dee2e6', fontSize: '0.95rem', color: '#1a1a2e',
-                    outline: 'none', background: '#fff'
-                  }} />
-              </div>
-            )}
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: '6px', color: '#495057' }}>Email</label>
-              <input type="email" name="email" placeholder="you@mail.mcgill.ca" required
-                style={{
-                  width: '100%', padding: '10px 14px', borderRadius: '8px',
-                  border: '1px solid #dee2e6', fontSize: '0.95rem', color: '#1a1a2e',
-                  outline: 'none', background: '#fff'
-                }} />
-            </div>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: '6px', color: '#495057' }}>
-                {t('auth.password', lang)}
-              </label>
-              <input type="password" name="password" placeholder="••••••••" required minLength={6}
-                style={{
-                  width: '100%', padding: '10px 14px', borderRadius: '8px',
-                  border: '1px solid #dee2e6', fontSize: '0.95rem', color: '#1a1a2e',
-                  outline: 'none', background: '#fff'
-                }} />
-            </div>
-            <button type="submit" disabled={authLoading}
-              style={{
-                width: '100%', padding: '12px', borderRadius: '8px', border: 'none',
-                background: 'linear-gradient(135deg, #ED1B2F 0%, #c41424 100%)',
-                color: '#fff', fontWeight: 700, fontSize: '1rem', cursor: 'pointer',
-                opacity: authLoading ? 0.7 : 1
-              }}>
-              {authLoading ? t('auth.pleaseWait', lang) : authMode === 'login' ? t('auth.signIn', lang) : t('auth.createAccount', lang)}
-            </button>
-          </form>
-          
-          <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: '#868e96' }}>
-            {authMode === 'login' ? (lang === 'en' ? "Don't have an account? " : "Pas de compte? ") : (lang === 'en' ? 'Already have an account? ' : 'Déjà un compte? ')}
-            <button onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setAuthError(''); }}
-              style={{ background: 'none', border: 'none', color: '#ED1B2F', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
-              {authMode === 'login' ? t('auth.signUp', lang) : t('auth.signIn', lang)}
-            </button>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-
-
-  // ============================================
-  // DASHBOARD — Course Edition
-  // ============================================
-  
-  const renderDashboard = () => {
-    const scores = userScores?.scores || [];
-    const bestScore = scores.length > 0 ? Math.max(...scores.map(s => s.score)) : null;
-    const bestGrade = scores.length > 0 ? scores.reduce((best, s) => s.score > best.score ? s : best, scores[0]).grade : null;
-    
-    return (
-      <div style={{ minHeight: '100vh', background: '#f8f9fa' }}>
-        {renderNavbar()}
-        <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem' }}>
-          {/* Welcome */}
-          <div style={{ marginBottom: '2rem' }}>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#1a1a2e' }}>
-              {t('dashboard.welcome', lang)}, {currentUser?.name?.split(' ')[0]}!
-            </h1>
-            <p style={{ color: '#868e96' }}>{t('dashboard.readyToContinue', lang)}</p>
-          </div>
-          
-          {/* Stats Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-            <div style={{
-              background: '#fff', borderRadius: '12px', padding: '1.5rem',
-              border: '1px solid #dee2e6', boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-            }}>
-              <div style={{ fontSize: '0.85rem', color: '#868e96', marginBottom: '4px' }}>{t('dashboard.totalAttempts', lang)}</div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1a1a2e' }}>{scores.length}</div>
-            </div>
-            <div style={{
-              background: '#fff', borderRadius: '12px', padding: '1.5rem',
-              border: '1px solid #dee2e6', boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-            }}>
-              <div style={{ fontSize: '0.85rem', color: '#868e96', marginBottom: '4px' }}>{t('dashboard.bestScore', lang)}</div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: bestScore ? '#ED1B2F' : '#868e96' }}>
-                {bestScore ? `${bestScore} (${bestGrade})` : '—'}
-              </div>
-            </div>
-          </div>
-          
-          {/* Scenario Cards */}
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem', color: '#1a1a2e' }}>
-            {lang === 'en' ? 'Choose a Scenario' : 'Choisissez un scénario'}
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
-            {Object.values(APEX_SCENARIOS).map(s => {
-              const scenarioScores = scores.filter(sc => sc.scenario_id === s.id);
-              const scenarioBest = scenarioScores.length > 0 ? Math.max(...scenarioScores.map(sc => sc.score)) : null;
-              return (
-                <div key={s.id} style={{
-                  background: '#fff', borderRadius: '12px', padding: '1.5rem',
-                  border: '1px solid #dee2e6', boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                  cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.2s'
-                }}
-                  onClick={() => {
-                    setSelectedScenario(APEX_SCENARIOS[s.id]);
-                    setSimPhase('brief');
-                    setCurrentPage('simulation');
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(237,27,47,0.12)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)'; e.currentTarget.style.transform = 'translateY(0)'; }}
-                >
-                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{s.icon}</div>
-                  <h3 style={{ fontWeight: 700, color: '#1a1a2e', marginBottom: '4px' }}>{s.title}</h3>
-                  <p style={{ fontSize: '0.85rem', color: '#868e96', marginBottom: '8px' }}>{s.subtitle}</p>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{
-                      padding: '2px 10px', borderRadius: '12px',
-                      background: s.difficultyColor + '15', color: s.difficultyColor,
-                      fontSize: '0.75rem', fontWeight: 600
-                    }}>{s.difficulty}</span>
-                    {scenarioBest !== null && (
-                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#ED1B2F' }}>
-                        Best: {scenarioBest}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          
-          {/* Recent Scores */}
-          {scores.length > 0 && (
-            <div style={{ marginTop: '2rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem', color: '#1a1a2e' }}>
-                {lang === 'en' ? 'Recent Results' : 'Résultats récents'}
-              </h2>
-              <div style={{
-                background: '#fff', borderRadius: '12px', border: '1px solid #dee2e6',
-                overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-              }}>
-                {scores.slice(0, 5).map((s, i) => (
-                  <div key={i} style={{
-                    padding: '12px 16px', display: 'flex', alignItems: 'center',
-                    justifyContent: 'space-between',
-                    borderBottom: i < Math.min(scores.length, 5) - 1 ? '1px solid #f1f3f5' : 'none'
-                  }}>
-                    <div>
-                      <span style={{ fontWeight: 600, color: '#1a1a2e' }}>{s.scenario_id?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>
-                      <span style={{ color: '#868e96', fontSize: '0.85rem', marginLeft: '8px' }}>
-                        {new Date(s.completed_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontWeight: 700, color: '#1a1a2e' }}>{s.score}</span>
-                      <span style={{
-                        padding: '2px 8px', borderRadius: '6px', fontWeight: 700, fontSize: '0.85rem',
-                        background: s.grade?.startsWith('A') ? '#d3f9d8' : s.grade?.startsWith('B') ? '#fff3bf' : '#ffe3e3',
-                        color: s.grade?.startsWith('A') ? '#2b8a3e' : s.grade?.startsWith('B') ? '#e67700' : '#c92a2a'
-                      }}>{s.grade}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
 
   const annaAvatar = (size = 48) => (
     <img 
@@ -2076,6 +1721,7 @@ ${debriefSectionFormat}`;
       </div>
     ));
   };
+
 
 
   const renderSimulation = () => {
@@ -3649,7 +3295,7 @@ ${debriefSectionFormat}`;
               <button className="btn-secondary-lg" onClick={() => { setSimPhase('select'); setGameState(null); }}>
                 {t('results.tryNewIndustry', lang)}
               </button>
-              <button className="btn-secondary-lg" onClick={() => setCurrentPage('dashboard')}>
+              <button className="btn-secondary-lg" onClick={() => setCurrentPage('home')}>
                 {t('results.backToDashboard', lang)}
               </button>
             </div>
@@ -3686,6 +3332,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
   // ============================================
   // STYLES
   // ============================================
+
 
 
   // ============================================
@@ -8431,22 +8078,9 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         }
       `}</style>
       
-
-        /* McGill theme button text fix: white text on red backgrounds */
-        .btn-primary, button[style*="ED1B2F"] {
-          color: #ffffff !important;
-        }
-        .toast.success { background: #d3f9d8; color: #2b8a3e; border: 1px solid #b2f2bb; }
-        .toast.error { background: #ffe3e3; color: #c92a2a; border: 1px solid #ffc9c9; }
-        .toast.info { background: #d0ebff; color: #1971c2; border: 1px solid #a5d8ff; }
-
-      `}</style>
-      
       {toast && <div className={`toast ${toast.type}`}>{toast.message}</div>}
       
-      {currentPage === 'landing' && renderLanding()}
-      {currentPage === 'auth' && renderAuth()}
-      {currentPage === 'dashboard' && renderDashboard()}
+      {currentPage === 'home' && renderHome()}
       {currentPage === 'simulation' && renderSimulation()}
     </div>
   );
