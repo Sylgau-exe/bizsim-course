@@ -1,0 +1,11 @@
+// api/init-db.js
+import { initializeDatabase } from '../lib/db.js';
+
+export default async function handler(req, res) {
+  try {
+    const result = await initializeDatabase();
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
