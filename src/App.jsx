@@ -3383,7 +3383,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .nav-links { display: flex; align-items: center; gap: 1rem; }
         .nav-link { background: none; border: none; color: var(--text-secondary); font-size: 0.95rem; padding: 0.5rem 1rem; transition: color 0.2s; }
         .nav-link:hover { color: var(--text-primary); }
-        .nav-btn-primary { background: var(--accent-primary); border: none; color: #1a1a2e; padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 500; transition: opacity 0.2s; }
+        .nav-btn-primary { background: var(--accent-primary); border: none; color: #ffffff; padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 500; transition: opacity 0.2s; }
         .nav-btn-primary:hover { opacity: 0.9; }
         .nav-user { display: flex; align-items: center; gap: 0.75rem; padding-left: 1rem; border-left: 1px solid var(--border); }
         .user-avatar { width: 32px; height: 32px; background: var(--accent-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem; }
@@ -3391,14 +3391,14 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .nav-link-small { background: none; border: none; color: var(--text-muted); font-size: 0.85rem; }
         
         /* Buttons */
-        .btn-primary { background: var(--accent-primary); border: none; color: #1a1a2e; padding: 0.75rem 1.5rem; border-radius: 10px; font-weight: 500; font-size: 0.95rem; transition: all 0.2s; }
+        .btn-primary { background: var(--accent-primary); border: none; color: #ffffff; padding: 0.75rem 1.5rem; border-radius: 10px; font-weight: 500; font-size: 0.95rem; transition: all 0.2s; }
         .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         .btn-secondary { background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-primary); padding: 0.75rem 1.5rem; border-radius: 10px; font-weight: 500; font-size: 0.95rem; transition: all 0.2s; }
         .btn-secondary:hover { border-color: var(--border-hover); background: var(--bg-card); }
         .btn-full { width: 100%; }
         .btn-lg { padding: 1rem 2rem; font-size: 1.1rem; }
-        .btn-primary-lg { background: var(--accent-primary); border: none; color: #1a1a2e; padding: 1rem 2rem; border-radius: 12px; font-weight: 600; font-size: 1.1rem; }
+        .btn-primary-lg { background: var(--accent-primary); border: none; color: #ffffff; padding: 1rem 2rem; border-radius: 12px; font-weight: 600; font-size: 1.1rem; }
         .btn-secondary-lg { background: transparent; border: 1px solid var(--border); color: var(--text-primary); padding: 1rem 2rem; border-radius: 12px; font-weight: 500; font-size: 1.1rem; }
         
         /* Toast */
@@ -3488,7 +3488,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .sim-meta { display: flex; gap: 1rem; font-size: 0.8rem; color: var(--text-muted); }
         .sim-badge-soon, .sim-badge-featured { position: absolute; top: 1rem; right: 1rem; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
         .sim-badge-soon { background: var(--bg-elevated); color: var(--text-muted); }
-        .sim-badge-featured { background: var(--success); color: #1a1a2e; }
+        .sim-badge-featured { background: var(--success); color: #ffffff; }
         
         /* Footer */
         .footer { background: var(--bg-secondary); padding: 4rem 2rem 1rem; }
@@ -3526,10 +3526,10 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .dashboard-page { 
           min-height: 100vh; 
           padding-top: 65px; 
-          background: linear-gradient(180deg, #f8fafc 0%, #343a40 100%);
+          background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
           color: #1e293b;
         }
-        .dashboard-page .navbar { background: rgba(255, 255, 255, 0.95); border-bottom: 1px solid #343a40; }
+        .dashboard-page .navbar { background: rgba(255, 255, 255, 0.95); border-bottom: 1px solid #dee2e6; }
         .dashboard-page .nav-link { color: #475569; }
         .dashboard-page .nav-link:hover { color: #1e293b; }
         .dashboard-page .user-name { color: #475569; }
@@ -3559,7 +3559,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           font-weight: 500;
         }
         .sidebar-btn:hover { border-color: #ED1B2F; background: #f0f0ff; }
-        .stat-item { display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #343a40; font-size: 0.9rem; }
+        .stat-item { display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #dee2e6; font-size: 0.9rem; }
         .stat-item span { color: #6c757d; }
         .stat-item strong { color: #1e293b; font-weight: 700; }
         .dashboard-main { flex: 1; padding: 2rem; }
@@ -3661,10 +3661,10 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .catalog-page { 
           min-height: 100vh; 
           padding-top: 65px; 
-          background: linear-gradient(180deg, #f8fafc 0%, #343a40 100%);
+          background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
           color: #1e293b;
         }
-        .catalog-page .navbar { background: rgba(255, 255, 255, 0.95); border-bottom: 1px solid #343a40; }
+        .catalog-page .navbar { background: rgba(255, 255, 255, 0.95); border-bottom: 1px solid #dee2e6; }
         .catalog-page .nav-link { color: #475569; }
         .catalog-page .nav-link:hover { color: #1e293b; }
         .catalog-page .user-name { color: #475569; }
@@ -3689,16 +3689,16 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .catalog-card-header { padding: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start; }
         .catalog-icon { font-size: 3rem; }
         .catalog-badges { display: flex; gap: 0.5rem; }
-        .badge-featured { padding: 0.25rem 0.6rem; background: #10b981; color: #1a1a2e; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
-        .badge-soon { padding: 0.25rem 0.6rem; background: #212529; color: #6c757d; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
-        .badge-pro { padding: 0.25rem 0.6rem; background: #c41424; color: #1a1a2e; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+        .badge-featured { padding: 0.25rem 0.6rem; background: #10b981; color: #ffffff; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+        .badge-soon { padding: 0.25rem 0.6rem; background: #e9ecef; color: #868e96; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+        .badge-pro { padding: 0.25rem 0.6rem; background: #c41424; color: #ffffff; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
         .catalog-card-body { padding: 0 1.5rem 1.5rem; flex: 1; }
         .catalog-category { font-size: 0.8rem; color: #b91425; font-weight: 600; }
         .catalog-card-body h3 { font-size: 1.4rem; margin: 0.25rem 0; color: #1e293b; }
         .catalog-subtitle { color: #475569; font-size: 0.95rem; margin-bottom: 0.75rem; }
         .catalog-desc { color: #6c757d; font-size: 0.9rem; line-height: 1.6; margin-bottom: 1rem; }
         .catalog-skills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-        .skill-tag { padding: 0.25rem 0.6rem; background: #212529; border-radius: 4px; font-size: 0.75rem; color: #475569; font-weight: 500; }
+        .skill-tag { padding: 0.25rem 0.6rem; background: #f1f3f5; border-radius: 4px; font-size: 0.75rem; color: #475569; font-weight: 500; }
         .catalog-card-footer { padding: 1.25rem 1.5rem; border-top: 1px solid #343a40; background: #f8fafc; }
         .catalog-meta { display: flex; gap: 1rem; font-size: 0.8rem; color: #6c757d; margin-bottom: 1rem; }
         .catalog-card-footer button { width: 100%; }
@@ -3711,11 +3711,11 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .pricing-header p { color: var(--text-muted); margin-bottom: 1.5rem; }
         .billing-toggle { display: inline-flex; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 0.25rem; }
         .billing-toggle button { padding: 0.6rem 1.25rem; background: transparent; border: none; color: var(--text-muted); border-radius: 8px; font-size: 0.9rem; transition: all 0.2s; }
-        .billing-toggle button.active { background: var(--accent-primary); color: #1a1a2e; }
+        .billing-toggle button.active { background: var(--accent-primary); color: #ffffff; }
         .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
         .pricing-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; position: relative; }
         .pricing-card.popular { border-color: var(--accent-primary); }
-        .popular-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--accent-primary); color: #1a1a2e; padding: 0.35rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .popular-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--accent-primary); color: #ffffff; padding: 0.35rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
         .pricing-card h3 { font-size: 1.5rem; margin-bottom: 0.25rem; }
         .plan-desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
         .plan-price { margin-bottom: 1.5rem; }
@@ -3749,10 +3749,10 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .sim-page { 
           min-height: 100vh; 
           padding-top: 65px; 
-          background: linear-gradient(180deg, #f8fafc 0%, #343a40 100%);
+          background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
           color: #1e293b;
         }
-        .sim-page .navbar { background: rgba(255, 255, 255, 0.95); border-bottom: 1px solid #343a40; }
+        .sim-page .navbar { background: rgba(255, 255, 255, 0.95); border-bottom: 1px solid #dee2e6; }
         .sim-page .nav-link { color: #475569; }
         .sim-page .nav-link:hover { color: #1e293b; }
         .sim-page .user-name { color: #475569; }
@@ -4076,7 +4076,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           color: #1e293b;
           margin: 2rem 0 1rem;
           padding-bottom: 0.5rem;
-          border-bottom: 1px solid #343a40;
+          border-bottom: 1px solid #dee2e6;
         }
         .tab-panel h4 {
           font-size: 1.1rem;
@@ -4456,7 +4456,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* Anna Overview Card */
         .anna-overview-card {
-          background: linear-gradient(135deg, #0f172a 0%, #1a2332 100%);
+          background: linear-gradient(135deg, #f0fdf9 0%, #e8faf5 100%);
           border: 1px solid rgba(13, 122, 110, 0.2);
           border-radius: 14px;
           padding: 1.25rem;
@@ -5045,7 +5045,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           font-size: 0.7rem;
           font-weight: 700;
         }
-        .msg-badge.urgent { background: #ef4444; color: #1a1a2e; }
+        .msg-badge.urgent { background: #ef4444; color: #ffffff; }
         
         /* RISKS CARD */
         .risk-list {
@@ -6005,7 +6005,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* Anna Intro on Briefing Page */
         .anna-intro {
-          background: linear-gradient(135deg, #0f172a 0%, #1a2332 100%);
+          background: linear-gradient(135deg, #f0fdf9 0%, #e8faf5 100%);
           border: 1px solid rgba(13, 122, 110, 0.2);
           border-radius: 16px;
           padding: 32px 36px;
@@ -6055,10 +6055,10 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           line-height: 1.75;
           color: #495057;
         }
-        .anna-speech strong { color: #f8fafc; }
+        .anna-speech strong { color: #1a1a2e; }
         .anna-speech p { margin-bottom: 12px; }
         .anna-highlight {
-          background: rgba(13, 122, 110, 0.08);
+          background: rgba(13, 122, 110, 0.06);
           border-left: 3px solid #0d7a6e;
           padding: 12px 16px;
           border-radius: 0 10px 10px 0;
@@ -6162,7 +6162,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           cursor: pointer;
           transition: all 0.2s;
         }
-        .anna-close:hover { background: rgba(0,0,0,0.08); color: #1a1a2e; }
+        .anna-close:hover { background: rgba(0,0,0,0.08); color: #495057; }
         
         .anna-panel-body {
           flex: 1;
@@ -6224,7 +6224,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         
         /* Anna Debrief on Results Page */
         .anna-debrief-section {
-          background: linear-gradient(135deg, #0f172a 0%, #1a2332 100%);
+          background: linear-gradient(135deg, #f0fdf9 0%, #e8faf5 100%);
           border: 1px solid rgba(13, 122, 110, 0.2);
           border-radius: 16px;
           padding: 0;
@@ -6759,7 +6759,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           background: linear-gradient(135deg, #ED1B2F 0%, #c41424 100%);
           border: none;
           border-radius: 12px;
-          color: #1a1a2e;
+          color: #ffffff;
           font-size: 1rem;
           font-weight: 600;
           cursor: pointer;
@@ -7011,7 +7011,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         .result.pass span { color: #10b981; font-weight: 700; }
         .result.fail span { color: #ef4444; font-weight: 700; }
         .end-actions { display: flex; flex-direction: column; gap: 0.75rem; }
-        .end-actions .btn-primary { background: linear-gradient(135deg, #ED1B2F 0%, #c41424 100%); border: none; color: #1a1a2e; box-shadow: 0 4px 20px rgba(237, 27, 47, 0.4); }
+        .end-actions .btn-primary { background: linear-gradient(135deg, #ED1B2F 0%, #c41424 100%); border: none; color: #ffffff; box-shadow: 0 4px 20px rgba(237, 27, 47, 0.4); }
         .end-actions .btn-primary:hover { background: linear-gradient(135deg, #5558e8 0%, #7c4fe3 100%); }
         .end-actions .btn-secondary { background: linear-gradient(135deg, #252540 0%, #1e1e32 100%); border: 1px solid #3a3a50; color: #d1d5db; }
         .end-actions .btn-secondary:hover { background: linear-gradient(135deg, #2a2a50 0%, #252545 100%); border-color: #ED1B2F; }
@@ -7072,7 +7072,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
         /* Admin Sidebar */
         .admin-sidebar {
           width: 260px;
-          background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+          background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
           color: #1a1a2e;
           display: flex;
           flex-direction: column;
@@ -7527,7 +7527,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           color: #6c757d;
           text-transform: uppercase;
           letter-spacing: 0.5px;
-          border-bottom: 1px solid #343a40;
+          border-bottom: 1px solid #dee2e6;
         }
         .admin-table td {
           padding: 1rem 1.25rem;
@@ -7668,7 +7668,7 @@ Quality: ${qualityScore}% | Team Morale: ${teamScore}%`;
           justify-content: space-between;
           align-items: center;
           padding: 1.25rem 1.5rem;
-          border-bottom: 1px solid #343a40;
+          border-bottom: 1px solid #dee2e6;
         }
         .modal-header h2 {
           margin: 0;
