@@ -1,6 +1,6 @@
 // api/auth/me.js
 import { UserDB, initializeDatabase } from '../../lib/db.js';
-import { getUserFromRequest, cors } from '../../lib/auth.js';
+import { getUserFromRequest, cors, applyAdminEmail } from '../../lib/auth.js';
 
 export default async function handler(req, res) {
   cors(res);
@@ -16,6 +16,7 @@ export default async function handler(req, res) {
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     const { password_hash, ...safeUser } = user;
+    applyAdminEmail(safeUser);
     res.json({ user: safeUser });
   } catch (error) {
     console.error('Me error:', error);

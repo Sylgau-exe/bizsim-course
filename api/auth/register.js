@@ -1,7 +1,7 @@
 // api/auth/register.js
 import bcrypt from 'bcryptjs';
 import { UserDB, initializeDatabase } from '../../lib/db.js';
-import { generateToken, cors } from '../../lib/auth.js';
+import { generateToken, cors, applyAdminEmail } from '../../lib/auth.js';
 
 export default async function handler(req, res) {
   cors(res);
@@ -29,6 +29,7 @@ export default async function handler(req, res) {
     const token = generateToken(user);
 
     const { password_hash, ...safeUser } = user;
+    applyAdminEmail(safeUser);
     res.status(201).json({ token, user: safeUser });
   } catch (error) {
     console.error('Register error:', error);

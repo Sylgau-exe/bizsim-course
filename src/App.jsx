@@ -2930,6 +2930,8 @@ export default function BizSimHub() {
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [checkoutLoading, setCheckoutLoading] = useState(null);
   const [userScores, setUserScores] = useState({ scores: [], bestScores: [] });
+  const [courseAdmin, setCourseAdmin] = useState(null);
+  const [adminExpanded, setAdminExpanded] = useState(null);
   const [subscription, setSubscription] = useState(null);
   const [toast, setToast] = useState(null);
   
@@ -3909,6 +3911,9 @@ export default function BizSimHub() {
             <>
               <button className="nav-link" onClick={() => setCurrentPage('dashboard')}>{t('nav.dashboard', lang)}</button>
               <button className="nav-link" onClick={() => setCurrentPage('catalog')}>{t('nav.simulations', lang)}</button>
+              {currentUser.is_admin && (
+                <button className="nav-link" onClick={() => setCurrentPage('admin')} title="Admin">⚙️ Admin</button>
+              )}
               <div className="nav-user">
                 <span className="user-avatar">{currentUser.name?.charAt(0)}</span>
                 <span className="user-name">{currentUser.name}</span>
@@ -4528,8 +4533,8 @@ export default function BizSimHub() {
   
   // Fetch admin data when entering admin page or changing tabs
   useEffect(() => {
-    if (currentPage === 'admin' && currentUser) {
-      fetchAdminData();
+    if (currentPage === 'admin' && currentUser?.is_admin) {
+      api.request('/admin/users').then(setCourseAdmin).catch(e => showToast('Admin: ' + e.message, 'error'));
     }
   }, [currentPage, currentUser]);
 
@@ -5561,6 +5566,168 @@ export default function BizSimHub() {
       </div>
     </div>
   );
+
+
+  const renderCourseAdmin = () => {
+    const A = (o) => L(lang, o);
+    const dimLabels = A({
+      en: { budget: 'Budget', schedule: 'Schedule & predictability', scope: 'Scope & value', quality: 'Quality' },
+      fr: { budget: 'Budget', schedule: 'Échéancier et prévisibilité', scope: 'Périmètre et valeur', quality: 'Qualité' },
+      es: { budget: 'Presupuesto', schedule: 'Cronograma y predictibilidad', scope: 'Alcance y valor', quality: 'Calidad' },
+      vi: { budget: 'Ngân sách', schedule: 'Tiến độ & dự đoán được', scope: 'Phạm vi & giá trị', quality: 'Chất lượng' }
+    });
+    const users = courseAdmin?.users || [];
+    const allScores = courseAdmin?.scores || [];
+    const byUser = {};
+    allScores.forEach(r => { (byUser[r.user_id] = byUser[r.user_id] || []).push(r); });
+    const analyze = (recs) => {
+      const dims = { budget: [], schedule: [], scope: [], quality: [] };
+      recs.forEach(r => {
+        const cfg = APEX_SCENARIOS[r.scenario_id];
+        const scrum = cfg && cfg.framework === 'scrum';
+        if (r.budget_score != null) dims.budget.push(r.budget_score / (scrum ? 50 : 200));
+        if (r.schedule_score != null) dims.schedule.push(r.schedule_score / (scrum ? 150 : 200));
+        if (r.scope_score != null) dims.scope.push(r.scope_score / (scrum ? 300 : 200));
+        if (r.quality_score != null) dims.quality.push(r.quality_score / 200);
+      });
+      return Object.entries(dims)
+        .filter(([, v]) => v.length > 0)
+        .map(([k, v]) => ({ k, pct: Math.min(100, Math.round((v.reduce((a, b) => a + b, 0) / v.length) * 100)) }))
+        .sort((a, b) => b.pct - a.pct);
+    };
+    const rows = users.map(u => {
+      const recs = byUser[u.id] || [];
+      const avgs = analyze(recs);
+      const best = recs.reduce((m, r) => (r.score > (m ? m.score : -1) ? r : m), null);
+      return {
+        u, recs, avgs,
+        plays: recs.length,
+        distinct: new Set(recs.map(r => r.scenario_id)).size,
+        avg: recs.length ? Math.round(recs.reduce((a, r) => a + r.score, 0) / recs.length) : 0,
+        best,
+        last: recs.length ? recs[0].completed_at : null
+      };
+    });
+    const totPlays = allScores.length;
+    const avgAll = totPlays ? Math.round(allScores.reduce((a, r) => a + r.score, 0) / totPlays) : 0;
+    const fmtDate = (d) => d ? new Date(d).toLocaleDateString(lang === 'en' ? 'en-CA' : lang) : '—';
+    const exportCsv = () => {
+      const esc = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+      const head = ['Name', 'Email', 'Registered', 'Completions', 'Distinct scenarios', 'Avg score', 'Best score', 'Best grade', 'Strength', 'Strength %', 'Weakness', 'Weakness %', 'Last activity'];
+      const lines = [head.join(',')].concat(rows.map(r => [
+        r.u.name, r.u.email, fmtDate(r.u.created_at), r.plays, r.distinct, r.avg,
+        r.best ? r.best.score : '', r.best ? r.best.grade : '',
+        r.avgs[0] ? dimLabels[r.avgs[0].k] : '', r.avgs[0] ? r.avgs[0].pct : '',
+        r.avgs.length ? dimLabels[r.avgs[r.avgs.length - 1].k] : '', r.avgs.length ? r.avgs[r.avgs.length - 1].pct : '',
+        fmtDate(r.last)
+      ].map(esc).join(',')));
+      const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'bizsim-users-' + new Date().toISOString().slice(0, 10) + '.csv';
+      a.click();
+    };
+    const card = (label, value) => (
+      <div style={{ flex: 1, minWidth: 140, background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', textAlign: 'center' }}>
+        <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1a1a2e' }}>{value}</div>
+        <div style={{ fontSize: '0.8rem', color: '#5c636a' }}>{label}</div>
+      </div>
+    );
+    const gradeColor = (g) => !g ? '#94a3b8' : g.startsWith('A') ? '#10b981' : g.startsWith('B') ? '#6366f1' : g === 'C' ? '#f59e0b' : '#ef4444';
+    return (
+      <div className="dashboard-page" style={{ minHeight: '100vh', background: '#f8f9fa' }}>
+        {renderNavbar()}
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '2rem 1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: '1.25rem' }}>
+            <div>
+              <h1 style={{ margin: 0, color: '#1a1a2e', fontSize: '1.6rem' }}>⚙️ {A({ en: 'Admin — Team Monitoring', fr: 'Admin — Suivi des participants', es: 'Admin — Seguimiento de participantes', vi: 'Admin — Theo dõi học viên' })}</h1>
+              <p style={{ margin: '4px 0 0', color: '#5c636a', fontSize: '0.9rem' }}>{A({ en: 'Who completed the simulations, their scores, strengths and weaknesses', fr: 'Qui a complété les simulations, leurs scores, forces et faiblesses', es: 'Quién completó las simulaciones, sus puntajes, fortalezas y debilidades', vi: 'Ai đã hoàn thành mô phỏng, điểm số, điểm mạnh và điểm yếu' })}</p>
+            </div>
+            <button className="btn-primary" onClick={exportCsv}>⬇️ {A({ en: 'Export CSV', fr: 'Exporter CSV', es: 'Exportar CSV', vi: 'Xuất CSV' })}</button>
+          </div>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+            {card(A({ en: 'Registered users', fr: 'Utilisateurs inscrits', es: 'Usuarios registrados', vi: 'Người dùng đã đăng ký' }), users.length)}
+            {card(A({ en: 'Completions', fr: 'Simulations complétées', es: 'Simulaciones completadas', vi: 'Lượt hoàn thành' }), totPlays)}
+            {card(A({ en: 'Average score', fr: 'Score moyen', es: 'Puntaje promedio', vi: 'Điểm trung bình' }), avgAll)}
+            {card(A({ en: 'Active players', fr: 'Joueurs actifs', es: 'Jugadores activos', vi: 'Người chơi có hoạt động' }), rows.filter(r => r.plays > 0).length)}
+          </div>
+          {!courseAdmin ? (
+            <p style={{ color: '#5c636a' }}>{A({ en: 'Loading…', fr: 'Chargement…', es: 'Cargando…', vi: 'Đang tải…' })}</p>
+          ) : (
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+                <thead>
+                  <tr style={{ background: '#f1f5f9', color: '#334155', textAlign: 'left' }}>
+                    <th style={{ padding: '10px 14px' }}>{A({ en: 'User', fr: 'Utilisateur', es: 'Usuario', vi: 'Người dùng' })}</th>
+                    <th style={{ padding: '10px 8px' }}>{A({ en: 'Completions', fr: 'Complétées', es: 'Completadas', vi: 'Hoàn thành' })}</th>
+                    <th style={{ padding: '10px 8px' }}>{A({ en: 'Scenarios', fr: 'Scénarios', es: 'Escenarios', vi: 'Kịch bản' })}</th>
+                    <th style={{ padding: '10px 8px' }}>{A({ en: 'Avg', fr: 'Moy.', es: 'Prom.', vi: 'TB' })}</th>
+                    <th style={{ padding: '10px 8px' }}>{A({ en: 'Best', fr: 'Meilleur', es: 'Mejor', vi: 'Cao nhất' })}</th>
+                    <th style={{ padding: '10px 8px' }}>💪 {A({ en: 'Strength', fr: 'Force', es: 'Fortaleza', vi: 'Điểm mạnh' })}</th>
+                    <th style={{ padding: '10px 8px' }}>🎯 {A({ en: 'Weakness', fr: 'Faiblesse', es: 'Debilidad', vi: 'Điểm yếu' })}</th>
+                    <th style={{ padding: '10px 8px' }}>{A({ en: 'Last activity', fr: 'Dernière activité', es: 'Última actividad', vi: 'Hoạt động cuối' })}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map(r => (
+                    <React.Fragment key={r.u.id}>
+                      <tr onClick={() => setAdminExpanded(adminExpanded === r.u.id ? null : r.u.id)}
+                          style={{ borderTop: '1px solid #e2e8f0', cursor: r.plays ? 'pointer' : 'default', background: adminExpanded === r.u.id ? '#f8fafc' : 'transparent' }}>
+                        <td style={{ padding: '10px 14px' }}>
+                          <div style={{ fontWeight: 600, color: '#1a1a2e' }}>{r.plays > 0 ? (adminExpanded === r.u.id ? '▾ ' : '▸ ') : ''}{r.u.name}</div>
+                          <div style={{ color: '#64748b', fontSize: '0.78rem' }}>{r.u.email}</div>
+                        </td>
+                        <td style={{ padding: '10px 8px' }}>{r.plays > 0 ? '✅ ' + r.plays : '—'}</td>
+                        <td style={{ padding: '10px 8px' }}>{r.distinct || '—'}</td>
+                        <td style={{ padding: '10px 8px', fontWeight: 600 }}>{r.plays ? r.avg : '—'}</td>
+                        <td style={{ padding: '10px 8px' }}>{r.best ? <span>{r.best.score} <strong style={{ color: gradeColor(r.best.grade) }}>{r.best.grade}</strong></span> : '—'}</td>
+                        <td style={{ padding: '10px 8px', color: '#10b981' }}>{r.avgs[0] ? `${dimLabels[r.avgs[0].k]} (${r.avgs[0].pct}%)` : '—'}</td>
+                        <td style={{ padding: '10px 8px', color: '#ef4444' }}>{r.avgs.length > 1 ? `${dimLabels[r.avgs[r.avgs.length - 1].k]} (${r.avgs[r.avgs.length - 1].pct}%)` : '—'}</td>
+                        <td style={{ padding: '10px 8px', color: '#64748b' }}>{fmtDate(r.last)}</td>
+                      </tr>
+                      {adminExpanded === r.u.id && r.plays > 0 && (
+                        <tr style={{ background: '#f8fafc' }}>
+                          <td colSpan={8} style={{ padding: '12px 14px 16px' }}>
+                            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                              <div style={{ minWidth: 260 }}>
+                                <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#334155', marginBottom: 8 }}>{A({ en: 'Performance by dimension', fr: 'Performance par dimension', es: 'Desempeño por dimensión', vi: 'Hiệu suất theo chiều' })}</div>
+                                {r.avgs.map(d => (
+                                  <div key={d.k} style={{ marginBottom: 6 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#475569' }}>
+                                      <span>{dimLabels[d.k]}</span><span>{d.pct}%</span>
+                                    </div>
+                                    <div style={{ height: 6, background: '#e2e8f0', borderRadius: 3 }}>
+                                      <div style={{ height: 6, width: d.pct + '%', borderRadius: 3, background: d.pct >= 70 ? '#10b981' : d.pct >= 45 ? '#f59e0b' : '#ef4444' }} />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 300 }}>
+                                <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#334155', marginBottom: 8 }}>{A({ en: 'History', fr: 'Historique', es: 'Historial', vi: 'Lịch sử' })}</div>
+                                {r.recs.slice(0, 10).map((rec, i) => {
+                                  const cfg = APEX_SCENARIOS[rec.scenario_id];
+                                  return (
+                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: '0.8rem', padding: '4px 0', borderBottom: '1px dashed #e2e8f0', color: '#475569' }}>
+                                      <span>{cfg ? cfg.icon + ' ' + cfg.title : rec.scenario_id}{cfg && cfg.framework === 'scrum' ? ' 🔁' : ''}</span>
+                                      <span>{rec.score} <strong style={{ color: gradeColor(rec.grade) }}>{rec.grade}</strong> · {fmtDate(rec.completed_at)}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const renderCatalog = () => (
     <div className="catalog-page">
@@ -13416,7 +13583,8 @@ Chất lượng: ${qualityScore}% | Tinh thần đội: ${teamScore}%`
       
       {!currentUser ? renderAuth() :
         currentPage === 'simulation' ? renderSimulation() :
-        currentPage === 'dashboard' ? renderDashboard() : renderCatalog()}
+        currentPage === 'dashboard' ? renderDashboard() :
+        currentPage === 'admin' && currentUser.is_admin ? renderCourseAdmin() : renderCatalog()}
     </div>
   );
 }
