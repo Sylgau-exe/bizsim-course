@@ -13,7 +13,8 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET') {
       const scores = await ScoreDB.getUserScores(decoded.userId);
-      return res.json({ scores });
+      const bestScores = [...scores].sort((a, b) => b.score - a.score);
+      return res.json({ scores, bestScores });
     }
 
     if (req.method === 'POST') {

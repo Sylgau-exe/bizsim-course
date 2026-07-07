@@ -3107,43 +3107,7 @@ export default function BizSimHub() {
       api.setToken(data.token);
       setCurrentUser(data.user);
       setCurrentPage('dashboard');
-      showToast('Welcome to BizSimHub! 🎉', 'success');
-      
-      // HubSpot: Create contact via Forms API
-      const HUBSPOT_PORTAL_ID = '342933870';
-      const HUBSPOT_FORM_GUID = '2bc1e72b-901a-45dd-9ea6-ea442fd0a125';
-      
-      const hubspotData = {
-        fields: [
-          { name: 'email', value: email },
-          { name: 'firstname', value: name.split(' ')[0] },
-          { name: 'lastname', value: name.split(' ').slice(1).join(' ') || '' }
-        ],
-        context: {
-          pageUri: window.location.href,
-          pageName: 'Registration'
-        }
-      };
-      
-      // Add UTM parameters if present
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('utm_source')) {
-        hubspotData.fields.push({ name: 'utm_source', value: params.get('utm_source') });
-      }
-      if (params.get('utm_medium')) {
-        hubspotData.fields.push({ name: 'utm_medium', value: params.get('utm_medium') });
-      }
-      if (params.get('utm_campaign')) {
-        hubspotData.fields.push({ name: 'utm_campaign', value: params.get('utm_campaign') });
-      }
-      
-      // Submit to HubSpot (fire and forget - don't block registration)
-      fetch(`https://api.hsforms.com/submissions/v3/integration/submit/${HUBSPOT_PORTAL_ID}/${HUBSPOT_FORM_GUID}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(hubspotData)
-      }).catch(err => console.log('HubSpot tracking:', err));
-      
+      showToast(L(lang, { en: 'Welcome to BizSim! 🎉', fr: 'Bienvenue sur BizSim ! 🎉', es: '¡Bienvenido a BizSim! 🎉', vi: 'Chào mừng đến với BizSim! 🎉' }), 'success');
     } catch (e) {
       setAuthError(e.message);
     } finally {
@@ -3156,7 +3120,7 @@ export default function BizSimHub() {
     setCurrentUser(null);
     setSubscription(null);
     setUserScores({ scores: [], bestScores: [] });
-    setCurrentPage('landing');
+    setCurrentPage('catalog');
   };
 
   // Stripe handlers
@@ -3940,7 +3904,18 @@ export default function BizSimHub() {
               <option key={l} value={l} style={{ color: '#1a1a2e', background: '#ffffff' }}>{LANG_LABELS[l]}</option>
             ))}
           </select>
-          <span className="nav-link" style={{ cursor: 'default', color: '#ED1B2F', fontWeight: 700 }}>YCBS 288</span>
+          <span className="nav-link" style={{ cursor: 'default', color: '#ED1B2F', fontWeight: 700 }}>{L(lang, { en: 'Course & Team Edition', fr: 'Édition cours et équipes', es: 'Edición cursos y equipos', vi: 'Phiên bản khóa học & đội nhóm' })}</span>
+          {currentUser && (
+            <>
+              <button className="nav-link" onClick={() => setCurrentPage('dashboard')}>{t('nav.dashboard', lang)}</button>
+              <button className="nav-link" onClick={() => setCurrentPage('catalog')}>{t('nav.simulations', lang)}</button>
+              <div className="nav-user">
+                <span className="user-avatar">{currentUser.name?.charAt(0)}</span>
+                <span className="user-name">{currentUser.name}</span>
+                <button className="nav-link-small" onClick={handleLogout}>{t('nav.logout', lang)}</button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </nav>
@@ -4430,27 +4405,11 @@ export default function BizSimHub() {
                 <div className="form-group">
                   <label>{L(lang, { en: 'Password', fr: 'Mot de passe', es: 'Contraseña', vi: 'Mật khẩu' })}</label>
                   <input type="password" name="password" placeholder="••••••••" required minLength={6} />
-                  {authMode === 'login' && (
-                    <button 
-                      type="button" 
-                      className="forgot-password-link"
-                      onClick={() => { setAuthMode('forgot'); setAuthError(''); }}
-                    >
-                      {L(lang, { en: 'Forgot password?', fr: 'Mot de passe oublié?', es: '¿Olvidaste tu contraseña?', vi: 'Quên mật khẩu?' })}
-                    </button>
-                  )}
                 </div>
                 <button type="submit" className="btn-primary btn-full" disabled={authLoading}>
                   {authLoading ? (L(lang, { en: 'Please wait...', fr: 'Patientez...', es: 'Espera un momento...', vi: 'Vui lòng chờ...' })) : authMode === 'login' ? (L(lang, { en: 'Sign In', fr: 'Connexion', es: 'Iniciar sesión', vi: 'Đăng nhập' })) : (L(lang, { en: 'Create Account', fr: 'Créer le compte', es: 'Crear cuenta', vi: 'Tạo tài khoản' }))}
                 </button>
               </form>
-              
-              <div className="auth-divider"><span>{L(lang, { en: 'or', fr: 'ou', es: 'o', vi: 'hoặc' })}</span></div>
-              
-              <button className="btn-google" onClick={() => window.location.href = `${API_BASE}/auth/google`}>
-                <span className="google-icon">G</span>
-                {L(lang, { en: 'Continue with Google', fr: 'Continuer avec Google', es: 'Continuar con Google', vi: 'Tiếp tục với Google' })}
-              </button>
               
               <p className="auth-toggle">
                 {authMode === 'login' ? (L(lang, { en: "Don't have an account? ", fr: "Pas de compte? ", es: '¿No tienes cuenta? ', vi: 'Chưa có tài khoản? ' })) : (L(lang, { en: 'Already have an account? ', fr: 'Déjà un compte? ', es: '¿Ya tienes cuenta? ', vi: 'Đã có tài khoản? ' }))}
@@ -5609,7 +5568,7 @@ export default function BizSimHub() {
       <div className="catalog-container">
         <div className="catalog-header">
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(237, 27, 47, 0.08)', color: '#ED1B2F', padding: '6px 16px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 600, marginBottom: '1rem' }}>
-            🎯 YCBS 288 — Strategic Project Leadership
+            🎓 {L(lang, { en: 'BizSim — Course & Team Edition', fr: 'BizSim — Édition cours et équipes', es: 'BizSim — Edición cursos y equipos', vi: 'BizSim — Phiên bản khóa học & đội nhóm' })}
           </div>
           <h1>{L(lang, { en: 'Project Management Simulations', fr: 'Simulations de gestion de projet', es: 'Simulaciones de gestión de proyectos', vi: 'Mô phỏng quản lý dự án' })}</h1>
           <p>{L(lang, { en: 'You are the PM. Choose an industry library — ANNA, your AI coach, guides your decisions.', fr: 'Vous êtes le GP. Choisissez une bibliothèque — ANNA, votre coach IA, guide vos décisions.', es: 'Tú eres el PM. Elige una biblioteca — ANNA, tu coach de IA, guía tus decisiones.', vi: 'Bạn là PM. Chọn một thư viện ngành — ANNA, huấn luyện viên AI, đồng hành cùng quyết định của bạn.' })}</p>
@@ -13455,7 +13414,9 @@ Chất lượng: ${qualityScore}% | Tinh thần đội: ${teamScore}%`
       
       {toast && <div className={`toast ${toast.type}`}>{toast.message}</div>}
       
-      {currentPage === 'simulation' ? renderSimulation() : renderCatalog()}
+      {!currentUser ? renderAuth() :
+        currentPage === 'simulation' ? renderSimulation() :
+        currentPage === 'dashboard' ? renderDashboard() : renderCatalog()}
     </div>
   );
 }
