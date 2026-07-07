@@ -35,7 +35,7 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: process.env.ANNA_MODEL || 'claude-sonnet-5', // sonnet-4 was retired; override with ANNA_MODEL env var if needed
         max_tokens,
         messages: [{ role: 'user', content: prompt }]
       })
