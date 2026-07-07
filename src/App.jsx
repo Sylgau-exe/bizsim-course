@@ -5643,7 +5643,10 @@ export default function BizSimHub() {
               <h1 style={{ margin: 0, color: '#1a1a2e', fontSize: '1.6rem' }}>⚙️ {A({ en: 'Admin — Team Monitoring', fr: 'Admin — Suivi des participants', es: 'Admin — Seguimiento de participantes', vi: 'Admin — Theo dõi học viên' })}</h1>
               <p style={{ margin: '4px 0 0', color: '#5c636a', fontSize: '0.9rem' }}>{A({ en: 'Who completed the simulations, their scores, strengths and weaknesses', fr: 'Qui a complété les simulations, leurs scores, forces et faiblesses', es: 'Quién completó las simulaciones, sus puntajes, fortalezas y debilidades', vi: 'Ai đã hoàn thành mô phỏng, điểm số, điểm mạnh và điểm yếu' })}</p>
             </div>
-            <button className="btn-primary" onClick={exportCsv}>⬇️ {A({ en: 'Export CSV', fr: 'Exporter CSV', es: 'Exportar CSV', vi: 'Xuất CSV' })}</button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn-secondary" onClick={() => window.open('/lab/lifecycle.html', '_blank')}>🧪 {A({ en: 'R&D Lab', fr: 'Labo R&D', es: 'Lab I+D', vi: 'Phòng thí nghiệm R&D' })}</button>
+              <button className="btn-primary" onClick={exportCsv}>⬇️ {A({ en: 'Export CSV', fr: 'Exporter CSV', es: 'Exportar CSV', vi: 'Xuất CSV' })}</button>
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: '1.5rem' }}>
             {card(A({ en: 'Registered users', fr: 'Utilisateurs inscrits', es: 'Usuarios registrados', vi: 'Người dùng đã đăng ký' }), users.length)}

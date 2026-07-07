@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lifecycle Simulation v2 — Enterprise Portal Modernization (R&D)</title>
+<style>
+  :root { --ink:#1a1a2e; --mut:#5c636a; --line:#e2e8f0; --red:#ED1B2F; --blue:#6366f1; --purple:#7c3aed; --green:#10b981; --amber:#f59e0b; --bad:#ef4444; --bg:#f8f9fa; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+  header { background:#fff; border-bottom:1px solid var(--line); padding:10px 20px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; position:sticky; top:0; z-index:10; }
+  header h1 { font-size:1rem; margin:0; }
+  .rd-badge { background:rgba(237,27,47,.08); color:var(--red); font-size:.7rem; font-weight:700; padding:3px 10px; border-radius:12px; }
+  .stepper { display:flex; gap:4px; margin-left:auto; flex-wrap:wrap; }
+  .step { font-size:.72rem; font-weight:600; padding:5px 10px; border-radius:14px; background:#eef2f7; color:var(--mut); }
+  .step.on { background:var(--blue); color:#fff; } .step.done { background:#d1fae5; color:#065f46; }
+  main { max-width:1280px; margin:0 auto; padding:16px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:14px; }
+  .card h2 { margin:0 0 4px; font-size:1.1rem; } .card h3 { margin:14px 0 6px; font-size:.9rem; }
+  .sub { color:var(--mut); font-size:.83rem; margin:0 0 8px; line-height:1.5; }
+  table { width:100%; border-collapse:collapse; font-size:.8rem; }
+  th { text-align:left; color:#475569; background:#f1f5f9; padding:5px 7px; font-size:.72rem; }
+  td { padding:5px 7px; border-top:1px solid var(--line); vertical-align:middle; }
+  .btn { border:0; border-radius:8px; padding:9px 15px; font-weight:600; cursor:pointer; font-size:.85rem; }
+  .btn-p { background:var(--blue); color:#fff; } .btn-s { background:#fff; color:var(--ink); border:1px solid var(--line); } .btn-g { background:var(--green); color:#fff; }
+  .grid2 { display:grid; grid-template-columns:1.15fr 1fr; gap:14px; align-items:start; }
+  @media (max-width:980px){ .grid2 { grid-template-columns:1fr; } }
+  .kpis { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0; }
+  .kpi { flex:1; min-width:98px; background:#fff; border:1px solid var(--line); border-radius:10px; padding:7px 9px; text-align:center; }
+  .kpi b { display:block; font-size:1.08rem; } .kpi span { font-size:.64rem; color:var(--mut); text-transform:uppercase; letter-spacing:.03em; }
+  .ok { color:var(--green); } .warn { color:var(--amber); } .bad { color:var(--bad); }
+  .pill { display:inline-block; font-size:.64rem; font-weight:700; padding:2px 7px; border-radius:10px; }
+  .pill.hi { background:#fee2e2; color:#991b1b; } .pill.med { background:#fef3c7; color:#92400e; } .pill.lo { background:#d1fae5; color:#065f46; }
+  .pill.cut { background:#f1f5f9; color:#94a3b8; text-decoration:line-through; }
+  .charter dt { font-weight:700; font-size:.8rem; margin-top:10px; color:#334155; } .charter dd { margin:2px 0 0; font-size:.83rem; color:#475569; line-height:1.5; }
+  input[type=number] { width:54px; padding:3px 5px; border:1px solid var(--line); border-radius:6px; font-size:.78rem; }
+  select { padding:3px 5px; border:1px solid var(--line); border-radius:6px; font-size:.76rem; max-width:110px; }
+  .derived { background:#eef2ff; border:1px solid #c7d2fe; border-radius:10px; padding:10px 13px; font-size:.8rem; margin-top:10px; line-height:1.6; }
+  .derived b { color:#3730a3; }
+  .alertbox { border-radius:8px; padding:8px 12px; font-size:.78rem; margin-top:8px; }
+  .alertbox.bad { background:#fef2f2; border:1px solid #fecaca; color:#991b1b; }
+  .event-card { border-left:4px solid var(--amber); background:#fffbeb; border-radius:8px; padding:12px 14px; margin-bottom:12px; }
+  .opt { display:block; width:100%; text-align:left; margin:6px 0; padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; cursor:pointer; font-size:.82rem; }
+  .opt:hover { border-color:var(--blue); background:#f5f7ff; }
+  .opt small { color:var(--mut); display:block; margin-top:2px; }
+  .log { font-size:.76rem; color:#475569; max-height:150px; overflow:auto; }
+  .log div { padding:3px 0; border-bottom:1px dashed var(--line); }
+  .bar { height:6px; background:var(--line); border-radius:4px; overflow:hidden; } .bar i { display:block; height:6px; border-radius:4px; background:var(--blue); }
+  .ttype { font-size:.9rem; }
+  .flash { animation:fl 1s ease; } @keyframes fl { 0% { background:#fef9c3; } 100% { background:transparent; } }
+  .toast { position:fixed; bottom:16px; right:16px; background:var(--ink); color:#fff; padding:10px 15px; border-radius:8px; font-size:.83rem; opacity:0; transition:opacity .3s; z-index:60; }
+  .toast.on { opacity:1; }
+  .concept { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:10px 14px; font-size:.8rem; color:#166534; margin-bottom:12px; line-height:1.55; }
+  .tasktbl td:first-child { max-width:220px; }
+</style>
+<script>
+(async () => {
+  document.documentElement.style.visibility = 'hidden';
+  try {
+    const tok = localStorage.getItem('bsim_token');
+    if (!tok) throw 0;
+    const r = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + tok } });
+    const d = await r.json();
+    if (!d.user || !d.user.is_admin) throw 0;
+    document.documentElement.style.visibility = '';
+  } catch (e) {
+    document.body.innerHTML = '<div style="font-family:sans-serif;padding:3rem;text-align:center;color:#5c636a"><h2>🔒 Not available</h2><p>This page requires an administrator session on this platform.</p><p><a href="/">Back to BizSim</a></p></div>';
+    document.documentElement.style.visibility = '';
+  }
+})();
+</script>
+</head>
+<body>
+<header>
+  <h1>🧪 Lifecycle Sim v2 <span style="color:var(--mut);font-weight:400">— Enterprise Portal Modernization</span></h1>
+  <span class="rd-badge">R&D MOCKUP — REAL YCBS 288 CHARTER & PLAN</span>
+  <div class="stepper" id="stepper"></div>
+</header>
+<main id="main"></main>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   v2: charter + first-pass plan imported from the YCBS 288 Plan/Charter
+   tool (Casestudypmo/public/plan.html). The junior PM's plan contains
+   REAL flaws: finishes week 17 vs the 14-week constraint, ~$160.7K vs
+   the $160K cap, and the senior developer is overallocated to 150%.
+   The engine simulates the plan AS MAINTAINED BY THE STUDENT.
+   ===================================================================== */
+
+// ------------------------- CHARTER (from plan.html) -------------------------
+const CHARTER = {
+  projectName: 'Enterprise Portal Modernization',
+  sponsor: 'Sarah Chen — VP Digital Transformation',
+  problem: 'The current customer portal is 8 years old, built on deprecated technology. It cannot support mobile access, handles only 50 concurrent users, and requires 3x the maintenance cost of modern alternatives. Customer satisfaction scores have dropped 22% over 2 years, and the support team spends 40% of their time on portal-related issues.',
+  solution: 'Build a new cloud-native customer portal with responsive design, modern UX, real-time ERP integration, and self-service capabilities, on a microservices architecture (AWS).',
+  objectives: [
+    'Increase customer satisfaction from 62% to 85% within 6 months of launch',
+    'Support 500+ concurrent users with <2s response time (at go-live)',
+    'Reduce portal-related support tickets by 50% (3 months post-launch)',
+    'Enable mobile access for 100% of portal features (at go-live)'
+  ],
+  constraints: [
+    { type:'Budget', text:'Maximum project budget of $160,000 (labor + procurement)', impact:'High' },
+    { type:'Time', text:'Must launch before Q4 fiscal year-end (14 weeks from approval)', impact:'High' },
+    { type:'Resource', text:'Senior developer pool limited to 2 FTEs', impact:'Medium' },
+    { type:'Technical', text:'Must integrate with existing SAP ERP — no ERP replacement', impact:'High' },
+    { type:'Regulatory', text:'SOC 2 + accessibility (WCAG 2.1 AA) compliance', impact:'Medium' }
+  ],
+  highLevelRisks: [
+    { text:'ERP integration complexity may exceed estimates', level:'High', mit:'Early proof-of-concept sprint in week 6' },
+    { text:'Key developer attrition during project', level:'Medium', mit:'Cross-training and documentation protocol' },
+    { text:'Scope creep from stakeholder feature requests', level:'High', mit:'Formal change control with sponsor sign-off' },
+    { text:'Cloud infrastructure costs exceed projections', level:'Low', mit:'Reserved instances + cost monitoring' }
+  ],
+  successCriteria: [
+    'All Must Have requirements delivered and accepted by UAT team',
+    'Performance benchmarks met (500 users, <2s)',
+    'Zero critical/high security findings at pen test',
+    'User training completed for 100% of identified user groups',
+    'Project delivered within ±10% of approved budget'
+  ],
+  authority: 'Sponsor: budget & scope changes >$10K, timeline >1 week · PM: day-to-day, scope <$10K · Steering: GO/NO-GO at gates'
+};
+
+// ------------------- FIRST-PASS PLAN (verbatim from plan.html) -------------------
+const RATES = { r1:125, r2:95, r3:110, r4:100, r5:95, r6:130, senior:135 }; // Marie 95 (BA), Paul 100 (Dev)
+const firstPassPlan = () => ({
+  resources: [
+    { id:'r1', label:'Project Manager',            rate:125, availability:100 },
+    { id:'r2', label:'Marie Dupont (BA)',          rate:95,  availability:100 },
+    { id:'r3', label:'UX Designer',                rate:110, availability:80  },
+    { id:'r4', label:'Paul Tremblay (Sr Dev)',     rate:100, availability:100 },
+    { id:'r5', label:'QA Specialist',              rate:95,  availability:100 },
+    { id:'r6', label:'DevOps Engineer',            rate:130, availability:50  }
+  ],
+  tasks: [
+    { id:'t1', name:'Project Kickoff & Planning',        type:'scope', icon:'📦', start:1,  dur:2,  res:'r1', alloc:100, dep:null,  core:true },
+    { id:'t2', name:'Gather Requirements',               type:'scope', icon:'📦', start:3,  dur:3,  res:'r2', alloc:100, dep:'t1',  core:true },
+    { id:'t3', name:'UX Design & Wireframes',            type:'scope', icon:'📦', start:5,  dur:3,  res:'r3', alloc:100, dep:'t2',  core:true },
+    { id:'t4', name:'Backend Development',               type:'scope', icon:'📦', start:7,  dur:6,  res:'r4', alloc:100, dep:'t3',  core:true },
+    { id:'t5', name:'Frontend Development',              type:'scope', icon:'📦', start:9,  dur:5,  res:'r4', alloc:50,  dep:'t3',  core:true },
+    { id:'t6', name:'User Acceptance Testing',           type:'scope', icon:'📦', start:13, dur:3,  res:'r5', alloc:100, dep:'t4',  core:true },
+    { id:'t7', name:'Deployment & Go-Live',              type:'scope', icon:'📦', start:16, dur:2,  res:'r6', alloc:100, dep:'t6',  core:true },
+    { id:'qt1', name:'Requirements Review Session',      type:'quality', icon:'🔍', start:5,  dur:1, res:'r2', alloc:50,  dep:'t2' },
+    { id:'qt2', name:'Design Walkthrough with Users',    type:'quality', icon:'🔍', start:7,  dur:1, res:'r3', alloc:25,  dep:'t3' },
+    { id:'qt3', name:'Performance Load Testing',         type:'quality', icon:'🧪', start:12, dur:1, res:'r5', alloc:100, dep:'t4', crit:'perf' },
+    { id:'qt4', name:'Integration Test Execution',       type:'quality', icon:'🧪', start:11, dur:2, res:'r5', alloc:80,  dep:'t4' },
+    { id:'qt5', name:'Security Vulnerability Scan',      type:'quality', icon:'🧪', start:14, dur:1, res:'r6', alloc:50,  dep:'t6', crit:'sec' },
+    { id:'rt1', name:'ERP Integration PoC Sprint',       type:'risk', icon:'⚠️', start:6,  dur:2, res:'r4', alloc:50,  dep:'t2', crit:'erp' },
+    { id:'rt2', name:'Cross-Training Sessions',          type:'risk', icon:'⚠️', start:8,  dur:1, res:'r4', alloc:25,  dep:null, crit:'xtrain' },
+    { id:'ct1', name:'Steering Committee Prep & Meetings', type:'comm', icon:'💬', start:3, dur:14, res:'r1', alloc:10, dep:null },
+    { id:'ct2', name:'Go-Live Town Hall & Training',     type:'comm', icon:'💬', start:16, dur:1, res:'r2', alloc:50, dep:'t6', crit:'train' },
+    { id:'pt1', name:'Cloud Infrastructure Setup',       type:'proc', icon:'🛒', start:5,  dur:2, res:'r6', alloc:50, dep:'t2' },
+    { id:'pt2', name:'Security Pen Test Coordination',   type:'proc', icon:'🛒', start:14, dur:2, res:'r6', alloc:50, dep:'t6', crit:'pentest' }
+  ],
+  procItems: [
+    { id:'p1', item:'Cloud Hosting (AWS)', cost:12000, chargeOn:'pt1' },
+    { id:'p2', item:'UI Component Library License', cost:3500, chargeOn:'pt1' },
+    { id:'p3', item:'Security Penetration Testing', cost:15000, chargeOn:'pt2' }
+  ]
+});
+
+const TYPE_LABEL = { scope:'Scope', quality:'Quality', risk:'Risk response', comm:'Communication', proc:'Procurement' };
+
+// ------------------------------- state -------------------------------
+const S = {
+  phase:'initiation', plan:firstPassPlan(), baseline:null,
+  week:0, round:0, progress:{}, doneWeek:{}, spent:0, procCharged:{},
+  morale:75, quality:70, sponsorSat:70,
+  pendingEvent:null, eventResolved:true,
+  crLog:[], decisionLog:[], statusHistory:[],
+  paulGone:false, erpBlown:false, crunched:0, contractor:false,
+  ended:false, endReason:''
+};
+
+// ------------------------- pure plan math -------------------------
+function taskCost(plan, t) {
+  const r = plan.resources.find(x => x.id === t.res);
+  return r ? r.rate * 8 * 5 * t.dur * (t.alloc / 100) : 0;
+}
+function planLabour(plan) { return plan.tasks.filter(t => !t.cut).reduce((a, t) => a + taskCost(plan, t), 0); }
+function planProc(plan) { return plan.procItems.filter(p => { const t = plan.tasks.find(x => x.id === p.chargeOn); return t && !t.cut; }).reduce((a, p) => a + p.cost, 0); }
+function planBudget(plan) { return planLabour(plan) + planProc(plan); }
+
+function overallocation(plan) {
+  // returns [{res,label,week,pct}] where planned demand exceeds availability
+  const out = [];
+  const horizon = Math.max(...plan.tasks.filter(t => !t.cut).map(t => t.start + t.dur - 1), 1);
+  for (const r of plan.resources) {
+    for (let w = 1; w <= horizon; w++) {
+      const demand = plan.tasks.filter(t => !t.cut && t.res === r.id && w >= t.start && w < t.start + t.dur)
+        .reduce((a, t) => a + t.alloc, 0);
+      if (demand > r.availability + 0.01) out.push({ res:r.id, label:r.label, week:w, pct:demand });
+    }
+  }
+  return out;
+}
+
+// forward simulation (dry run) — used for live forecast AND actual rounds
+function simulateWeek(plan, progress, week, moraleFactor) {
+  // fast-tracking allowed: a successor may start once its predecessor is 60% complete
+  const depReady = id => { const t = plan.tasks.find(x => x.id === id); return !t || t.cut || (progress[id] || 0) >= t.dur * 0.6 - 0.01; };
+  const active = plan.tasks.filter(t => !t.cut && (progress[t.id] || 0) < t.dur - 0.001 && week >= t.start && (!t.dep || depReady(t.dep)));
+  const demand = {};
+  active.forEach(t => { demand[t.res] = (demand[t.res] || 0) + t.alloc; });
+  let weekCost = 0; const overloaded = [];
+  for (const t of active) {
+    const r = plan.resources.find(x => x.id === t.res);
+    const eff = Math.min(1, (r.availability || 100) / (demand[t.res] || 1));
+    if (eff < 0.999 && !overloaded.includes(r.label)) overloaded.push(r.label);
+    progress[t.id] = (progress[t.id] || 0) + eff * moraleFactor;
+    weekCost += r.rate * 8 * 5 * (t.alloc / 100) * eff; // pay for work actually performed
+  }
+  return { active, weekCost, overloaded };
+}
+function forecast(plan, progress, fromWeek) {
+  const p = JSON.parse(JSON.stringify(progress)); let w = fromWeek; let guard = 0;
+  const mf = Math.min(1.1, Math.max(0.7, 0.7 + 0.004 * S.morale));
+  const remaining = () => plan.tasks.filter(t => !t.cut && (p[t.id] || 0) < t.dur - 0.01).length;
+  while (remaining() > 0 && guard++ < 60) { w++; simulateWeek(plan, p, w, mf); }
+  return remaining() > 0 ? 99 : w;
+}
+
+function pctComplete(plan, progress) {
+  const act = plan.tasks.filter(t => !t.cut);
+  const done = act.reduce((a, t) => a + Math.min(progress[t.id] || 0, t.dur), 0);
+  const tot = act.reduce((a, t) => a + t.dur, 0);
+  return tot ? done / tot : 0;
+}
+function isDone(plan, progress, id) { const t = plan.tasks.find(x => x.id === id); return !!t && !t.cut && (progress[id] || 0) >= t.dur - 0.01; }
+
+// EVM vs original baseline
+function evm() {
+  const b = S.baseline; if (!b) return null;
+  const BAC = b.budget;
+  let PV = 0, EV = 0;
+  for (const t of b.plan.tasks.filter(t => !t.cut)) {
+    const c = taskCost(b.plan, t);
+    PV += c * Math.max(0, Math.min(1, (S.week - t.start + 1) / t.dur));
+    const cur = S.plan.tasks.find(x => x.id === t.id);
+    const frac = cur && !cur.cut ? Math.min(1, (S.progress[t.id] || 0) / t.dur) : (S.progress[t.id] || 0) / t.dur;
+    EV += c * Math.min(1, frac);
+  }
+  PV += b.procPlanned ? 0 : 0;
+  const AC = S.spent;
+  return { BAC, PV, EV, AC, SPI: PV > 0 ? EV / PV : 1, CPI: AC > 0 ? EV / AC : 1, EAC: AC > 0 && EV > 0 ? BAC / (EV / AC) : BAC };
+}
+
+// ------------------------------- events -------------------------------
+function hasLiveTask(id) { const t = S.plan.tasks.find(x => x.id === id); return t && !t.cut; }
+const EVENTS = [
+  { round:1, icon:'📈', title:'Sponsor feature request — "customer analytics dashboard"',
+    text: () => 'Sarah Chen returns from a leadership offsite wanting a customer analytics dashboard in the launch. The charter gives her authority over scope changes >$10K — but the change control process is yours to run.',
+    options: [
+      { label:'Accept via change control: add "Analytics Dashboard" task (Dev, 2 wks, 100%)', hint:'Scope grows — replan around it (resource? schedule? cuts?).',
+        fx(){ S.plan.tasks.push({ id:'cr1', name:'Analytics Dashboard (CR-1)', type:'scope', icon:'📦', start:Math.max(S.week+1,11), dur:2, res:'r4', alloc:100, dep:'t4' }); S.sponsorSat += 12; log('CR-1 approved: Analytics Dashboard added to WBS'); } },
+      { label:'Negotiate: Phase 2, two weeks after go-live', hint:'Protects the plan; sponsor mildly disappointed.',
+        fx(){ S.sponsorSat -= 5; log('Analytics dashboard deferred to Phase 2'); } },
+      { label:'Decline — cite the week-14 constraint she signed', hint:'Bold. The charter is on your side, her patience is not.',
+        fx(){ S.sponsorSat -= 14; S.morale += 2; log('Feature request declined, charter constraint cited'); } }
+    ] },
+  { round:2, icon:'🔌', title:'ERP integration is harder than estimated',
+    text: () => hasLiveTask('rt1') && (S.progress['rt1'] || 0) > 0
+      ? 'The SAP sandbox API returns undocumented data structures — exactly what the PoC sprint was designed to catch. Because the PoC ran, the team isolated the issue early. Impact: contained.'
+      : 'The SAP integration hits undocumented data structures in production APIs. The PoC sprint that would have caught this early ' + (hasLiveTask('rt1') ? 'has not run yet' : 'was removed from the plan') + '. Backend estimates are now fiction.',
+    options: [
+      { label:'Absorb: extend Backend Development to fit reality', hint:'Backend +1 wk if PoC ran, +3 wks if not. Honest replan.',
+        fx(){ const t4 = S.plan.tasks.find(t => t.id === 't4'); const poc = hasLiveTask('rt1') && (S.progress['rt1'] || 0) > 0; t4.dur += poc ? 1 : 3; if (!poc) { S.quality -= 6; S.erpBlown = true; } cr('Backend Development duration → ' + t4.dur + ' wks (ERP reality)'); log('Backend re-estimated ' + (poc ? '(+1 wk, PoC contained it)' : '(+3 wks, no PoC)')); } },
+      { label:'Bring in an integration contractor ($18K, external)', hint:'Duration protected; budget takes the hit.',
+        fx(){ S.spent += 18000; S.contractor = true; const poc = hasLiveTask('rt1') && (S.progress['rt1'] || 0) > 0; if (!poc) S.quality -= 3; log('Integration contractor engaged: $18K'); } },
+      { label:'Descope real-time sync to nightly batch', hint:'Backend −1 wk, but the "real-time ERP integration" promise in the charter dies. Quality −8, sponsor −10.',
+        fx(){ const t4 = S.plan.tasks.find(t => t.id === 't4'); t4.dur = Math.max(2, t4.dur - 1); S.quality -= 8; S.sponsorSat -= 10; cr('ERP integration descoped: real-time → nightly batch'); log('Real-time sync descoped to batch'); } }
+    ] },
+  { round:3, icon:'🚪', title:'Paul Tremblay hands in his notice',
+    text: () => { const over = S.baseline.overalloc.some(o => o.res === 'r4'); const xt = isDone(S.plan, S.progress, 'rt2');
+      return (over ? 'Weeks of 150% allocation caught up with him. ' : '') + 'Paul (your senior developer, hired at a below-market $100/hr) accepted an offer elsewhere. ' + (xt ? 'The cross-training sessions ran — his knowledge is documented and shared.' : (hasLiveTask('rt2') ? 'Cross-training was planned but has not run yet.' : 'Cross-training was cut from the plan — his knowledge walks out with him.')); },
+    options: [
+      { label:'Backfill from the senior pool ($135/hr market rate)', hint:'Dev work continues at higher cost; short onboarding dip.',
+        fx(){ const r4 = S.plan.resources.find(r => r.id === 'r4'); r4.rate = 135; r4.label = 'Sr Dev (backfill, $135/hr)'; S.paulGone = true; const xt = isDone(S.plan, S.progress, 'rt2'); if (!xt) { ['t4','t5','cr1'].forEach(id => { const t = S.plan.tasks.find(x => x.id === id); if (t && !t.cut && (S.progress[id] || 0) < t.dur) t.dur += 1; }); cr('Dev tasks +1 wk each (knowledge loss — no cross-training)'); } cr('Resource r4: Paul → senior pool backfill, $100 → $135/hr'); log('Paul backfilled at market rate' + (xt ? ' — cross-training saved the schedule' : ', dev tasks slip +1 wk')); } },
+      { label:'Counter-offer to keep Paul (+$15/hr and a retention bonus $8K)', hint:'Cheaper than backfill if he stays — he stays.',
+        fx(){ const r4 = S.plan.resources.find(r => r.id === 'r4'); r4.rate = 115; S.spent += 8000; S.morale += 4; cr('Resource r4: Paul retained, $100 → $115/hr + $8K bonus'); log('Paul retained with counter-offer'); } },
+      { label:'Spread his work across the team (no backfill)', hint:'No new cost — but the rest of the plan absorbs the load.',
+        fx(){ const xt = isDone(S.plan, S.progress, 'rt2'); ['t4','t5','cr1'].forEach(id => { const t = S.plan.tasks.find(x => x.id === id); if (t && !t.cut && (S.progress[id] || 0) < t.dur) t.dur += (xt ? 1 : 2); }); S.morale -= 10; S.quality -= 4; cr('Dev tasks redistributed (+' + (isDone(S.plan,S.progress,'rt2') ? 1 : 2) + ' wk each), no backfill'); log('Dev work spread across team; morale −10'); } }
+    ] },
+  { round:4, icon:'🏁', title:'Steering committee — fiscal year-end is week 14',
+    text: () => 'GO/NO-GO checkpoint. Your live forecast says go-live ≈ week ' + forecast(S.plan, S.progress, S.week) + '. The steering committee reminds you the fiscal year-end (week 14) is contractual for the cloud budget.',
+    options: [
+      { label:'Crunch the final stretch (+25% pace)', hint:'Morale −15, quality −5. The oldest trade in the book.',
+        fx(){ S.crunched++; S.morale -= 15; S.quality -= 5; log('Crunch authorized for final stretch'); } },
+      { label:'Hold the plan and present the forecast with variance analysis', hint:'If your maths says ≤14, this is the professional answer.',
+        fx(){ const f = forecast(S.plan, S.progress, S.week); S.sponsorSat += (f <= 14 ? 10 : -12); log('Forecast presented: week ' + f + (f <= 14 ? ' — committee satisfied' : ' — committee alarmed')); } },
+      { label:'Cut every remaining non-core task to guarantee the date', hint:'Quality/risk/comm tasks not yet done are removed. Consequences at closing.',
+        fx(){ S.plan.tasks.forEach(t => { if (!t.core && !t.cut && (S.progress[t.id] || 0) < t.dur) { t.cut = true; cr('Cut: ' + t.name + ' (date protection)'); } }); S.quality -= 6; log('All remaining support tasks cut to protect the date'); } }
+    ] }
+];
+
+// ------------------------------ engine round ------------------------------
+const WEEKS_PER_ROUND = 3;
+function runRound() {
+  S.round++;
+  for (let i = 0; i < WEEKS_PER_ROUND; i++) {
+    if (S.plan.tasks.every(t => t.cut || (S.progress[t.id] || 0) >= t.dur - 0.01)) break;
+    S.week++;
+    const mf = Math.min(1.1, Math.max(0.7, 0.7 + 0.004 * S.morale)) * (S.crunched && S.round >= 4 ? 1.25 : 1);
+    const { weekCost, overloaded } = simulateWeek(S.plan, S.progress, S.week, mf);
+    S.spent += weekCost;
+    for (const t of S.plan.tasks) if (!t.cut && !S.doneWeek[t.id] && (S.progress[t.id] || 0) >= t.dur - 0.01) S.doneWeek[t.id] = S.week;
+    if (overloaded.length) S.morale = Math.max(10, S.morale - 1.5 * overloaded.length);
+    // procurement charges on task start
+    for (const p of S.plan.procItems) {
+      const t = S.plan.tasks.find(x => x.id === p.chargeOn);
+      if (t && !t.cut && !S.procCharged[p.id] && S.week >= t.start && (S.progress[t.id] || 0) > 0) { S.procCharged[p.id] = true; S.spent += p.cost; }
+    }
+    // quality gains from completed quality tasks
+    for (const t of S.plan.tasks.filter(t => t.type === 'quality')) {
+      if (isDone(S.plan, S.progress, t.id) && !t._qCredited) { t._qCredited = true; S.quality = Math.min(100, S.quality + 3); }
+    }
+  }
+  snapshot();
+  const remaining = S.plan.tasks.filter(t => !t.cut && (S.progress[t.id] || 0) < t.dur - 0.01).length;
+  if (remaining === 0) { S.ended = true; S.endReason = 'All planned work complete — go-live at week ' + (S.doneWeek['t7'] || S.week) + '.'; }
+  else if (S.week >= 20) { S.ended = true; S.endReason = 'Week 20: the fiscal year closed six weeks ago. The steering committee terminates the project.'; }
+  else if (S.spent > 240000) { S.ended = true; S.endReason = 'Spend passed $240K (150% of cap) — finance terminates the project.'; }
+  if (S.ended) { S.phase = 'closing'; render(); return; }
+  const ev = EVENTS.find(e => e.round === S.round);
+  S.pendingEvent = ev || null; S.eventResolved = !ev;
+  render();
+}
+function snapshot() {
+  const e = evm();
+  S.statusHistory.push({ week:S.week, pct:Math.round(pctComplete(S.plan, S.progress) * 100), spi:e.SPI, cpi:e.CPI, spent:e.AC, morale:S.morale, quality:S.quality });
+}
+function log(m) { S.decisionLog.unshift('Wk ' + S.week + ' — ' + m); }
+function cr(m) { S.crLog.unshift({ week:S.week, text:m }); }
+function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2400); }
+
+// ------------------------------ plan editor ------------------------------
+function planEditorHTML(exec) {
+  const p = S.plan;
+  const resOpts = sel => p.resources.map(r => `<option value="${r.id}" ${r.id===sel?'selected':''}>${r.label.split('(')[0].trim()}</option>`).join('');
+  const rows = p.tasks.map((t, i) => {
+    const done = Math.min(S.progress[t.id] || 0, t.dur);
+    const pct = Math.round(done / t.dur * 100);
+    const finished = pct >= 100;
+    const lock = exec && finished;
+    return `<tr style="${t.cut ? 'opacity:.45' : ''}">
+      <td><span class="ttype" title="${TYPE_LABEL[t.type]}">${t.icon}</span> ${t.name} ${t.cut ? '<span class="pill cut">CUT</span>' : ''}</td>
+      <td>${lock || t.cut ? t.start : `<input type="number" min="${exec ? S.week + 1 : 1}" max="20" value="${t.start}" onchange="editTask(${i},'start',this.value)">`}</td>
+      <td>${lock || t.cut ? t.dur : `<input type="number" min="1" max="12" value="${t.dur}" onchange="editTask(${i},'dur',this.value)">`}</td>
+      <td>${lock || t.cut ? p.resources.find(r=>r.id===t.res).label.split('(')[0].trim() : `<select onchange="editTask(${i},'res',this.value)">${resOpts(t.res)}</select>`}</td>
+      <td>${lock || t.cut ? t.alloc + '%' : `<input type="number" min="10" max="100" step="5" value="${t.alloc}" onchange="editTask(${i},'alloc',this.value)">%`}</td>
+      <td>$${Math.round(taskCost(p, t)/1000)}K</td>
+      ${exec ? `<td>${finished ? '✅' : pct + '%'}</td>` : ''}
+      <td>${t.core || finished ? '' : `<button class="btn btn-s" style="padding:2px 8px;font-size:.7rem" onclick="editTask(${i},'cut',${!t.cut})">${t.cut ? 'Restore' : 'Cut'}</button>`}</td>
+    </tr>`;
+  }).join('');
+  const resRows = p.resources.map((r, i) => `<tr>
+    <td>${r.label}</td><td>$${r.rate}/hr</td>
+    <td><input type="number" min="10" max="100" step="10" value="${r.availability}" onchange="editResource(${i},this.value)">% </td>
+  </tr>`).join('');
+  return `
+    <table class="tasktbl"><tr><th>Task</th><th>Start</th><th>Wks</th><th>Resource</th><th>Alloc</th><th>Cost</th>${exec ? '<th>Done</th>' : ''}<th></th></tr>${rows}</table>
+    <h3>👥 Resources (negotiate availability with functional managers)</h3>
+    <table><tr><th>Resource</th><th>Rate</th><th>Availability</th></tr>${resRows}</table>
+    <p class="sub" style="margin-top:6px">📦 scope · 🔍/🧪 quality · ⚠️ risk response · 💬 communication · 🛒 procurement (AWS $12K + license $3.5K charge with Cloud Setup; pen test $15K with Pen Test Coordination)</p>
+    <div class="derived" id="derived">${derivedHTML()}</div>`;
+}
+
+function derivedHTML() {
+  const p = S.plan;
+  const budget = planBudget(p);
+  const over = overallocation(p).filter(o => o.week > S.week);
+  const overTxt = over.length
+    ? `<span class="bad">⚠️ Overallocated: ${[...new Set(over.map(o => o.label.split('(')[0] + ' wk' + o.week + ' (' + Math.round(o.pct) + '%)'))].slice(0, 4).join(' · ')}${over.length > 4 ? ' +' + (over.length - 4) + ' more' : ''}</span>`
+    : '<span class="ok">✅ No resource overallocation ahead</span>';
+  const fin = forecast(p, S.progress, S.week);
+  const spentTxt = S.baseline ? ` · Spent so far <b>$${Math.round(S.spent/1000)}K</b>` : '';
+  return `<b>⚙️ Derived simulation variables</b> — recomputed from this plan:<br>
+    Forecast go-live ≈ <b>week ${fin}</b> <span class="${fin <= 14 ? 'ok' : 'bad'}">(charter cap: 14)</span> ·
+    Planned cost <b>$${Math.round(budget/1000)}K</b> <span class="${budget <= 160000 ? 'ok' : 'bad'}">(cap $160K)</span>${spentTxt}<br>${overTxt}`;
+}
+
+window.editResource = (i, v) => {
+  const r = S.plan.resources[i]; const before = r.availability;
+  r.availability = +v;
+  if (S.phase === 'execution') cr(`Resource "${r.label}" availability: ${before}% → ${r.availability}%`);
+  refreshDerived();
+};
+window.editTask = (i, k, v) => {
+  const t = S.plan.tasks[i]; const before = k === 'cut' ? (t.cut ? 'cut' : 'active') : t[k];
+  t[k] = (k === 'res') ? v : (k === 'cut' ? v : +v);
+  if (S.phase === 'execution') cr(`"${t.name}" ${k}: ${before} → ${k === 'cut' ? (v ? 'cut' : 'active') : t[k]}`);
+  refreshDerived(); if (k === 'cut') render();
+};
+function refreshDerived() {
+  const el = document.getElementById('derived');
+  if (el) { el.innerHTML = derivedHTML(); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+}
+
+// ------------------------------ M&C ------------------------------
+function mcHTML() {
+  if (!S.baseline) return '';
+  const e = evm();
+  const rows = S.statusHistory.map(h => `<tr>
+    <td>Wk ${h.week}</td><td>${h.pct}%</td>
+    <td class="${h.spi>=0.95?'ok':h.spi>=0.8?'warn':'bad'}">${h.spi.toFixed(2)}</td>
+    <td class="${h.cpi>=0.95?'ok':h.cpi>=0.8?'warn':'bad'}">${h.cpi.toFixed(2)}</td>
+    <td>$${Math.round(h.spent/1000)}K</td><td>${Math.round(h.morale)}%</td><td>${Math.round(h.quality)}</td></tr>`).join('');
+  const miles = [
+    { name:'Design complete (UX)', id:'t3' }, { name:'Backend complete', id:'t4' },
+    { name:'UAT sign-off', id:'t6' }, { name:'Go-Live', id:'t7' }
+  ].map(m => { const t = S.plan.tasks.find(x => x.id === m.id); const done = isDone(S.plan, S.progress, m.id);
+    return `<tr><td>${m.name}</td><td>wk ${t.start + t.dur - 1}</td><td>${done ? '✅ done' : (S.week >= t.start + t.dur - 1 ? '<span class="bad">⚠️ late</span>' : '⏳ pending')}</td></tr>`; }).join('');
+  return `
+    <div class="kpis">
+      <div class="kpi"><b class="${e.SPI>=0.95?'ok':e.SPI>=0.8?'warn':'bad'}">${e.SPI.toFixed(2)}</b><span>SPI</span></div>
+      <div class="kpi"><b class="${e.CPI>=0.95?'ok':e.CPI>=0.8?'warn':'bad'}">${e.CPI.toFixed(2)}</b><span>CPI</span></div>
+      <div class="kpi"><b>$${Math.round(e.AC/1000)}K</b><span>Actual cost</span></div>
+      <div class="kpi"><b class="${e.EAC<=176000?'ok':'bad'}">$${Math.round(e.EAC/1000)}K</b><span>EAC</span></div>
+      <div class="kpi"><b class="${S.morale>=50?'ok':'bad'}">${Math.round(S.morale)}%</b><span>Morale</span></div>
+      <div class="kpi"><b class="${S.quality>=70?'ok':'bad'}">${Math.round(S.quality)}</b><span>Quality</span></div>
+      <div class="kpi"><b>${Math.round(S.sponsorSat)}%</b><span>Sponsor</span></div>
+    </div>
+    <h3>Milestones</h3>
+    <table><tr><th>Milestone</th><th>Planned</th><th>Status</th></tr>${miles}</table>
+    <h3>Status history</h3>
+    <table><tr><th>Date</th><th>% done</th><th>SPI</th><th>CPI</th><th>Spent</th><th>Morale</th><th>Quality</th></tr>${rows || '<tr><td colspan="7" class="sub">No status yet.</td></tr>'}</table>
+    <p class="sub" style="margin-top:6px">EVM vs original baseline: BAC $${Math.round(e.BAC/1000)}K. Changes alter the future, not the baseline.</p>`;
+}
+
+// ------------------------------ views ------------------------------
+function render() {
+  const steps = ['initiation','planning','execution','closing'];
+  const labels = { initiation:'1 · Initiation', planning:'2 · Planning', execution:'3+4 · Execution & M&C', closing:'5 · Closing' };
+  document.getElementById('stepper').innerHTML = steps.map(s =>
+    `<span class="step ${s===S.phase?'on':steps.indexOf(s)<steps.indexOf(S.phase)?'done':''}">${labels[s]}</span>`).join('');
+  const m = document.getElementById('main');
+  m.innerHTML = S.phase === 'initiation' ? viewInitiation() : S.phase === 'planning' ? viewPlanning() : S.phase === 'execution' ? viewExecution() : viewClosing();
+  window.scrollTo(0, 0);
+}
+
+function viewInitiation() {
+  return `
+  <div class="concept">🧪 <b>R&D concept:</b> this uses the REAL charter and first-pass plan from the YCBS 288 Plan/Charter tool. The plan is the engine: capacity, cost, schedule and risk exposure are derived live from the task plan the student maintains. The junior PM's first pass contains genuine flaws — finding and fixing them (in Planning or later) is the game.</div>
+  <div class="card">
+    <h2>📜 Project Charter — ${CHARTER.projectName}</h2>
+    <p class="sub">Sponsor: ${CHARTER.sponsor}</p>
+    <dl class="charter">
+      <dt>Problem</dt><dd>${CHARTER.problem}</dd>
+      <dt>Proposed solution</dt><dd>${CHARTER.solution}</dd>
+      <dt>Objectives</dt><dd>${CHARTER.objectives.map(o => '• ' + o).join('<br>')}</dd>
+      <dt>Constraints</dt><dd>${CHARTER.constraints.map(c => `<span class="pill ${c.impact==='High'?'hi':c.impact==='Medium'?'med':'lo'}">${c.type}</span> ${c.text}`).join('<br>')}</dd>
+      <dt>High-level risks</dt><dd>${CHARTER.highLevelRisks.map(r => `<span class="pill ${r.level==='High'?'hi':r.level==='Medium'?'med':'lo'}">${r.level}</span> ${r.text} — <i>${r.mit}</i>`).join('<br>')}</dd>
+      <dt>Success criteria</dt><dd>${CHARTER.successCriteria.map(c => '• ' + c).join('<br>')}</dd>
+      <dt>Authority</dt><dd>${CHARTER.authority}</dd>
+    </dl>
+    <div style="margin-top:14px"><button class="btn btn-g" onclick="S.phase='planning';render()">✅ Accept charter → Planning</button></div>
+  </div>`;
+}
+
+function viewPlanning() {
+  return `
+  <div class="card">
+    <h2>📐 Planning — the junior PM's first-pass plan</h2>
+    <p class="sub">Review it against the charter. Use it as-is or fix it — <b>whatever you baseline is what gets simulated</b>. Check the derived panel below: does the schedule respect the constraints? Does the budget close? Is anyone overloaded?</p>
+    ${planEditorHTML(false)}
+    <div style="margin-top:14px; display:flex; gap:10px;">
+      <button class="btn btn-p" onclick="setBaseline()">🔒 Set baseline → Start execution</button>
+      <button class="btn btn-s" onclick="S.plan=firstPassPlan();render()">Reset to first-pass plan</button>
+    </div>
+  </div>`;
+}
+
+window.setBaseline = () => {
+  S.baseline = { plan: JSON.parse(JSON.stringify(S.plan)), budget: planBudget(S.plan), overalloc: overallocation(S.plan), forecastAtBaseline: forecast(S.plan, {}, 0) };
+  S.phase = 'execution'; S.pendingEvent = null; S.eventResolved = true;
+  render(); toast('Baseline locked. The engine now runs on YOUR plan.');
+};
+
+function viewExecution() {
+  const ev = S.pendingEvent;
+  const eventBlock = ev && !S.eventResolved ? `
+    <div class="event-card"><b>${ev.icon} ${ev.title}</b>
+      <p style="margin:6px 0" class="sub">${ev.text()}</p>
+      ${ev.options.map((o, i) => `<button class="opt" onclick="decide(${i})"><b>${o.label}</b><small>${o.hint}</small></button>`).join('')}
+    </div>` : '';
+  const advance = (!ev || S.eventResolved)
+    ? `<button class="btn btn-p" onclick="runRound()">▶️ Run weeks ${S.week + 1}–${S.week + WEEKS_PER_ROUND}</button>
+       <p class="sub" style="margin-top:6px">Adjust the plan below first if needed — every edit after baseline is a logged change request and re-derives the engine.</p>`
+    : `<p class="sub">⚠️ Resolve the event first (you can edit the plan before or after deciding).</p>`;
+  return `
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <h2>🚀 Execution — Week ${S.week} · ${Math.round(pctComplete(S.plan, S.progress) * 100)}% complete</h2>
+        <div class="bar" style="margin:8px 0 12px"><i style="width:${Math.round(pctComplete(S.plan, S.progress) * 100)}%"></i></div>
+        ${eventBlock}${advance}
+      </div>
+      <div class="card"><h2>📊 Monitor & Control</h2>${mcHTML()}</div>
+      <div class="card">
+        <h3 style="margin-top:0">📋 Change requests (${S.crLog.length})</h3>
+        <div class="log">${S.crLog.map(c => `<div>Wk ${c.week} — ${c.text}</div>`).join('') || '<span class="sub">None — baseline untouched.</span>'}</div>
+        <h3>🗒️ Decision log</h3>
+        <div class="log">${S.decisionLog.map(d => `<div>${d}</div>`).join('') || '<span class="sub">No decisions yet.</span>'}</div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📐 Living project plan</h2>
+      <p class="sub">Task-level control: start week, duration, resource, allocation, cut/restore. Finished tasks lock.</p>
+      ${planEditorHTML(true)}
+    </div>
+  </div>`;
+}
+
+window.decide = (i) => {
+  const ev = S.pendingEvent; if (!ev) return;
+  ev.options[i].fx(); S.eventResolved = true;
+  S.decisionLog.unshift('Wk ' + S.week + ' — DECISION [' + ev.title + ']: ' + ev.options[i].label);
+  render(); toast('Decision recorded — replan if needed, then run the round.');
+};
+
+// ------------------------------ closing ------------------------------
+function viewClosing() {
+  const e = evm();
+  const goLive = isDone(S.plan, S.progress, 't7');
+  const scopeDone = S.plan.tasks.filter(t => t.type === 'scope' && !t.cut).every(t => isDone(S.plan, S.progress, t.id));
+  const crit = [
+    { name:'All Must-Have requirements delivered (scope complete + UAT)', ok: scopeDone && isDone(S.plan, S.progress, 't6'), val: scopeDone ? 'delivered' : 'incomplete' },
+    { name:'Performance benchmarks met (load testing ran)', ok: isDone(S.plan, S.progress, 'qt3') && S.quality >= 65, val: isDone(S.plan, S.progress, 'qt3') ? 'load-tested, quality ' + Math.round(S.quality) : 'load test never ran' },
+    { name:'Zero critical security findings (scan + pen test ran)', ok: isDone(S.plan, S.progress, 'qt5') && isDone(S.plan, S.progress, 'pt2'), val: (isDone(S.plan, S.progress, 'qt5') ? 'scan ✓' : 'scan ✗') + ' · ' + (isDone(S.plan, S.progress, 'pt2') ? 'pen test ✓' : 'pen test ✗') },
+    { name:'User training completed', ok: isDone(S.plan, S.progress, 'ct2'), val: isDone(S.plan, S.progress, 'ct2') ? 'town hall + training done' : 'never happened' },
+    { name:'Delivered within ±10% of approved budget ($' + Math.round(S.baseline.budget * 1.1 / 1000) + 'K)', ok: S.spent <= S.baseline.budget * 1.1, val: '$' + Math.round(S.spent/1000) + 'K' },
+    { name:'Charter constraint: go-live ≤ week 14', ok: goLive && (S.doneWeek['t7'] || 99) <= 14, val: goLive ? 'week ' + S.doneWeek['t7'] : 'no go-live' }
+  ];
+  const passed = crit.filter(c => c.ok).length;
+  const grade = passed === 6 ? 'A+' : passed === 5 ? 'A' : passed === 4 ? 'B' : passed === 3 ? 'C' : passed === 2 ? 'D' : 'F';
+  const b = S.baseline;
+  const insights = [
+    b.forecastAtBaseline > 14
+      ? '🔍 <b>Planning:</b> the plan you baselined already forecast go-live at week ' + b.forecastAtBaseline + ' — the junior PM\'s week-17 finish was never fixed. The charter said 14. That flaw was visible before day one.'
+      : '✅ <b>Planning:</b> you compressed the first-pass schedule to fit the 14-week constraint before baselining. That is the single highest-value review finding.',
+    b.budget > 160000
+      ? '🔍 <b>Budget:</b> your baseline cost $' + Math.round(b.budget/1000) + 'K vs the $160K cap — over before you started.'
+      : '✅ <b>Budget:</b> baseline $' + Math.round(b.budget/1000) + 'K respected the $160K cap.',
+    b.overalloc.some(o => o.res === 'r4')
+      ? '🔍 <b>Resources:</b> Paul was booked at up to 150% for weeks in your baseline. Overallocation slows every task it touches — and it is why he resigned.'
+      : '✅ <b>Resources:</b> no overallocation at baseline — you caught the junior PM\'s classic mistake.',
+    S.crLog.length === 0
+      ? '🔍 <b>Change control:</b> zero change requests — the plan was never updated during execution. In a live project, an unmaintained plan stops being true within weeks.'
+      : '✅ <b>Change control:</b> ' + S.crLog.length + ' logged changes — the plan stayed a living document, exactly what Monitoring & Controlling is for.',
+    S.crunched ? '⚠️ Crunch used — check what it cost in morale (' + Math.round(S.morale) + '%) and quality (' + Math.round(S.quality) + ').' : '✅ No crunch — sustainable pace held.',
+    e.CPI < 0.9 ? '⚠️ Final CPI ' + e.CPI.toFixed(2) + ': each planned dollar bought ' + Math.round(e.CPI * 100) + '¢. Trace the leak in the status history.' : '✅ Cost efficiency held (CPI ' + e.CPI.toFixed(2) + ').'
+  ];
+  return `
+  <div class="card">
+    <h2>🏁 Closing — ${CHARTER.projectName}</h2>
+    <p class="sub">${S.endReason}</p>
+    <div class="kpis">
+      <div class="kpi" style="flex:0 0 110px"><b style="font-size:1.9rem;color:${passed>=5?'var(--green)':passed>=3?'var(--amber)':'var(--bad)'}">${grade}</b><span>Grade</span></div>
+      <div class="kpi"><b>${passed}/6</b><span>Criteria met</span></div>
+      <div class="kpi"><b>${e.SPI.toFixed(2)} / ${e.CPI.toFixed(2)}</b><span>SPI / CPI</span></div>
+      <div class="kpi"><b>$${Math.round(S.spent/1000)}K</b><span>Final cost</span></div>
+      <div class="kpi"><b>${S.crLog.length}</b><span>Change requests</span></div>
+      <div class="kpi"><b>${Math.round(S.sponsorSat)}%</b><span>Sponsor satisfaction</span></div>
+    </div>
+    <h3>Success criteria (from the charter you accepted)</h3>
+    <table><tr><th>Criterion</th><th>Result</th><th></th></tr>
+      ${crit.map(c => `<tr><td>${c.name}</td><td>${c.val}</td><td>${c.ok ? '✅' : '❌'}</td></tr>`).join('')}</table>
+    <h3>Review & analysis</h3>
+    <p class="sub" style="line-height:1.8">${insights.join('<br>')}</p>
+    <h3>Change request history</h3>
+    <div class="log">${S.crLog.map(c => `<div>Wk ${c.week} — ${c.text}</div>`).join('') || '<span class="sub">None.</span>'}</div>
+    <div style="margin-top:14px"><button class="btn btn-p" onclick="location.reload()">🔄 Restart</button></div>
+  </div>`;
+}
+
+render();
+</script>
+</body>
+</html>
