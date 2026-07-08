@@ -261,7 +261,7 @@
   </div>
 </div>
 <header>
-  <h1>🏆 PM LEAGUE <span style="font-size:.6rem;font-weight:800;color:#ddd6fe;vertical-align:6px" id="gamever">v8.1</span></h1>
+  <h1>🏆 PM LEAGUE <span style="font-size:.6rem;font-weight:800;color:#ddd6fe;vertical-align:6px" id="gamever">v9.0</span></h1>
   <div id="ribbon"></div>
 </header>
 <main id="main">
@@ -517,6 +517,8 @@ function advanceTeamWeek(T, w) {
       }
     }
   }
+  for (const t of T.plan.tasks) if ((T.progress[t.id] || 0) > t.dur) T.progress[t.id] = t.dur;
+  T.sponsorSat = Math.max(0, Math.min(100, T.sponsorSat));
   if (overloaded.length) T.morale = Math.max(10, T.morale - 1.5 * overloaded.length);
   for (const p of T.plan.procItems) {
     const t = T.plan.tasks.find(x => x.id === p.chargeOn);
@@ -605,7 +607,7 @@ const TACTICS = [
       } else { T.sponsorSat -= 4; g.news.unshift({ week:g.week, icon:'🕵️', team:T.name, text:'Poaching attempt on ' + target.name + ' leaked — the sponsor is not amused' }); } } },
   { id:'skunk', icon:'🎲', name:'Skunkworks sprint — $5K', desc:'50/50 gamble: a remaining scope task loses 1 week free — or quality −5.',
     fx(T, g){ T.spent += tacticCost(T, 5000);
-      if (rand(g) < 0.5) { const c = T.plan.tasks.filter(t => !t.cut && t.dur > 1 && t.type === 'scope' && (T.progress[t.id] || 0) < t.dur - 0.01);
+      if (rand(g) < 0.5) { const c = T.plan.tasks.filter(t => !t.cut && t.dur > 1 && t.type === 'scope' && (T.progress[t.id] || 0) < t.dur - 1.01);
         if (c.length) { const t = c[Math.floor(rand(g) * c.length)]; t.dur -= 1; t.origAdj = (t.origAdj || 0) + 1; crT(T, T.week, 'Skunkworks paid off: "' + t.name + '" −1 wk (no premium)'); } }
       else { T.quality -= 5; crT(T, T.week, 'Skunkworks backfired: quality −5'); } } }
 ];
@@ -625,6 +627,134 @@ const MICRO_EVENTS = [
   { icon:'📞', title:'Recruiters circle every team — tired people listen', apply(T){ if (ldr(T) === 'servant') return; T.morale = Math.max(10, T.morale - (T.morale < 50 ? 6 : 3) * (ldr(T) === 'pacesetter' ? 1.5 : 1)); } },
   { icon:'🏖️', title:'Long weekend — everyone slows down a touch', apply(T){ T.tacticPace = (T.tacticPace || 1) * 0.95; } }
 ];
+
+// ------------------------------ stakeholders ------------------------------
+const STAKEHOLDERS = {
+  vp:      { icon:'🧑‍💼', name:'Victor Alvarez', role:'Vice-President · Executive Committee', color:'linear-gradient(140deg,#64748b,#334155)' },
+  fin:     { icon:'🧮', name:'Amara Okafor', role:'Finance Director · Executive Committee', color:'linear-gradient(140deg,#0ea5e9,#1d4ed8)' },
+  ops:     { icon:'🏭', name:'Denis Roy', role:'Operations Director · Executive Committee', color:'linear-gradient(140deg,#f59e0b,#b45309)' },
+  mkt:     { icon:'📣', name:'Lina Park', role:'Marketing Director · Executive Committee', color:'linear-gradient(140deg,#ec4899,#a21caf)' },
+  sponsor: { icon:'👩‍💼', name:'Sarah Chen', role:'VP Digital Transformation · Sponsor', color:'linear-gradient(140deg,#a855f7,#6366f1)' },
+  customer:{ icon:'🧑‍💻', name:'Helena Wu', role:'Customer Advisory Lead', color:'linear-gradient(140deg,#10b981,#047857)' },
+  supplier:{ icon:'📦', name:'Rico Fontaine', role:'CloudNova · Key Supplier', color:'linear-gradient(140deg,#94a3b8,#475569)' },
+  designer:{ icon:'🎨', name:'Maya Solis', role:'UX Designer · Your Team', color:'linear-gradient(140deg,#f472b6,#db2777)' },
+  dev:     { icon:'👨‍💻', name:'Paul Tremblay', role:'Senior Developer · Your Team', color:'linear-gradient(140deg,#ef4444,#b91c1c)' }
+};
+function conf(T, d) { T.sponsorSat = Math.max(0, Math.min(100, T.sponsorSat + d)); }
+function counterRoll(T, g, base) { const p = base + (ldr(T) === 'diplomat' ? 0.2 : 0) + (T.sponsorSat - 70) * 0.003; return rand(g) < Math.max(0.2, Math.min(0.9, p)); }
+const STAKE_MOMENTS = [
+ { id:'fin_burn', who:'fin', kind:'Executive check-in', when:(T,g)=> !!T.baseline && (T.spent / 160000) > (g.week / 14) * 0.9 + 0.06,
+   text:(T,g)=> { const e = evmT(T); return 'Week ' + g.week + ': you have burned $' + Math.round(T.spent/1000) + 'K of the $160K envelope and your CPI is ' + (e ? e.CPI.toFixed(2) : '—') + '. Cash flow on this contract is my problem — explain to me why it should not become yours.'; },
+   options:[
+    { label:'Walk her through the variance analysis, line by line', hint:'Honesty pays if your numbers hold (CPI ≥ 0.85): +7. Otherwise +2 — but trust intact.',
+      fx(T,g){ const e = evmT(T); conf(T, e && e.CPI >= 0.85 ? 7 : 2); } },
+    { label:'"It\'s under control — front-loaded spend, it normalizes."', hint:'Spin. Works if CPI ≥ 0.95 (+4). She fact-checks otherwise (−8).',
+      fx(T,g){ const e = evmT(T); if (e && e.CPI >= 0.95) conf(T, 4); else { conf(T, -8); g.news.unshift({ week:g.week, icon:'🧮', team:'League news', text:'Finance fact-checked the "under control" line — it was not under control' }); } } },
+    { label:'Request a $6K contingency release while you replan', hint:'Relief now ($6K back), credibility cost (−4).',
+      fx(T,g){ T.spent = Math.max(0, T.spent - 6000); conf(T, -4); } } ] },
+ { id:'ops_overload', who:'ops', kind:'Executive check-in', when:(T,g)=> overallocation(T.plan).some(o => o.week > g.week),
+   text:()=> 'My people are booked past capacity on your plan. Every hour you overbook them, another department slips. What is your move?',
+   options:[
+    { label:'Commit to rebalancing the loading this week', hint:'Morale +4, confidence +2 — then actually fix it in the Plan.',
+      fx(T){ T.morale = Math.min(100, T.morale + 4); conf(T, 2); } },
+    { label:'Push back — the charter makes this project the priority', hint:'Confidence −5, morale −2.',
+      fx(T){ conf(T, -5); T.morale = Math.max(10, T.morale - 2); } },
+    { label:'Fund a joint capacity review ($2K)', hint:'Costs money, buys goodwill on both sides (+4 confidence, +2 morale).',
+      fx(T){ T.spent += 2000; T.morale = Math.min(100, T.morale + 2); conf(T, 4); } } ] },
+ { id:'mkt_date', who:'mkt', kind:'Negotiation', when:(T,g)=> g.week >= 5 && !T.publicDate,
+   text:()=> 'I want to announce the launch publicly — press, customers, the works. Give me a date I can print. And understand: if we miss a printed date, we all wear it.',
+   options:[
+    { label:'Commit publicly to week 14', hint:'Confidence +6 now. Miss it and the committee remembers at closing (−10).',
+      fx(T){ T.publicDate = 14; conf(T, 6); } },
+    { label:'Negotiate a soft window: "by week 16"', hint:'Confidence +2; missing 16 still stings (−6).',
+      fx(T){ T.publicDate = 16; conf(T, 2); } },
+    { label:'No public date until UAT passes', hint:'Confidence −5, zero commitment risk.',
+      fx(T){ conf(T, -5); } } ] },
+ { id:'cust_usability', who:'customer', kind:'Change request · Negotiation', when:(T,g)=> g.week >= 4,
+   text:()=> 'The advisory group tested the wireframes. We need one more usability pass before launch — our people will live in this portal eight hours a day. Quote me.',
+   options:[
+    { label:'Accept the change: $4K usability pass', hint:'Quality +5, confidence +3, budget −$4K.',
+      fx(T){ T.spent += 4000; T.quality = Math.min(100, T.quality + 5); conf(T, 3); } },
+    { label:'Counter-offer: focused pass on the top 3 screens ($2K)', hint:'Negotiation — good odds, better with high confidence or a Diplomat.',
+      fx(T,g){ if (counterRoll(T, g, 0.6)) { T.spent += 2000; T.quality = Math.min(100, T.quality + 4); conf(T, 3); g.news.unshift({ week:g.week, icon:'🤝', team:'Your Team', text:'Counter-offer landed: focused usability pass at half price' }); } else { conf(T, -4); g.news.unshift({ week:g.week, icon:'🤝', team:'Your Team', text:'Counter-offer rejected — the customer walked away annoyed' }); } } },
+    { label:'Decline — the plan has no room', hint:'Confidence −6.',
+      fx(T){ conf(T, -6); } } ] },
+ { id:'supp_deal', who:'supplier', kind:'Negotiation', when:(T,g)=> { const t = T.plan.tasks.find(x => x.id === 'pt2'); return !!t && !t.cut && !T.procCharged['p3']; },
+   text:()=> 'Prepay the penetration test this month and I knock $3K off the invoice. Cash out now, savings later — your call, chief.',
+   options:[
+    { label:'Take the deal: pay $12K now instead of $15K later', hint:'Early cash out, $3K saved overall.',
+      fx(T,g){ const pr = T.plan.procItems.find(x => x.id === 'p3'); if (pr && !T.procCharged['p3']) { T.procCharged['p3'] = true; T.spent += 12000; pr.cost = 0; g.news.unshift({ week:g.week, icon:'📦', team:'Your Team', text:'Pen test prepaid — $3K saved' }); } } },
+    { label:'Counter: $2K off, payable at delivery', hint:'Negotiation — he likes you more than he shows.',
+      fx(T,g){ const pr = T.plan.procItems.find(x => x.id === 'p3'); if (!pr || T.procCharged['p3']) return; if (counterRoll(T, g, 0.55)) { pr.cost = 13000; g.news.unshift({ week:g.week, icon:'📦', team:'Your Team', text:'Supplier counter accepted: $2K off, pay on delivery' }); } else conf(T, -2); } },
+    { label:'Decline — protect this month\'s cash', hint:'No change.',
+      fx(){} } ] },
+ { id:'des_time', who:'designer', kind:'Team request · Negotiation', when:(T,g)=> { const t = T.plan.tasks.find(x => x.id === 't3'); return !!t && !t.cut && (T.progress['t3'] || 0) < t.dur - 0.01; },
+   text:()=> 'I can ship what we planned. Or I can ship something users will love, with one more week. I know what the schedule says. I am asking anyway.',
+   options:[
+    { label:'Give her the week (+1 wk on UX design)', hint:'Quality +6, morale +4 — the schedule pays for it.',
+      fx(T,g){ const t = T.plan.tasks.find(x => x.id === 't3'); if (t) { t.dur += 1; crT(T, g.week, 'UX design +1 wk (design quality investment)'); } T.quality = Math.min(100, T.quality + 6); T.morale = Math.min(100, T.morale + 4); } },
+    { label:'Counter: two focused days with a dev pairing ($1.5K)', hint:'Negotiation — she mostly needs to be heard.',
+      fx(T,g){ if (counterRoll(T, g, 0.65)) { T.spent += 1500; T.quality = Math.min(100, T.quality + 4); T.morale = Math.min(100, T.morale + 3); } else T.morale = Math.max(10, T.morale - 3); } },
+    { label:'Hold the plan — the quality bar is set', hint:'Morale −4.',
+      fx(T){ T.morale = Math.max(10, T.morale - 4); } } ] },
+ { id:'vp_behind', who:'vp', kind:'Executive check-in', when:(T,g)=> (T.lastRank || 1) >= 3 && g.week >= 6,
+   text:(T)=> 'The committee tracks all five initiatives on one page. Yours is ranked #' + T.lastRank + '. Convince me this is a position, not a trend.',
+   options:[
+    { label:'Present the recovery trajectory, forecast attached', hint:'Honest — confidence scales with your actual forecast.',
+      fx(T,g){ const f = forecastT(T, g.week); conf(T, f <= 16 ? 6 : 1); } },
+    { label:'"Mid-project rankings are noise."', hint:'Deflection. He has heard better (−4).',
+      fx(T){ conf(T, -4); } },
+    { label:'Ask for executive air-cover on scope pressure', hint:'Confidence −2, but the shield helps the team: morale +4.',
+      fx(T){ conf(T, -2); T.morale = Math.min(100, T.morale + 4); } } ] },
+ { id:'dev_training', who:'dev', kind:'Team request', when:(T,g)=> { const t = T.plan.tasks.find(x => x.id === 'rt2'); return !t || t.cut || (T.progress['rt2'] || 0) < t.dur - 0.01; },
+   text:()=> 'Nobody else on this team can touch the integration layer. If I get hit by a bus — or a recruiter — you are dead in the water. Give me a day to document and train.',
+   options:[
+    { label:'Fund the knowledge-transfer day ($1.5K)', hint:'Morale +5, and it softens the bus factor.',
+      fx(T){ T.spent += 1500; T.morale = Math.min(100, T.morale + 5); } },
+    { label:'Counter: brown-bag session over lunch (free)', hint:'Negotiation — cheap, if he buys it.',
+      fx(T,g){ if (counterRoll(T, g, 0.5)) T.morale = Math.min(100, T.morale + 3); else T.morale = Math.max(10, T.morale - 3); } },
+    { label:'After go-live — not now', hint:'Morale −4, and the risk stays.',
+      fx(T){ T.morale = Math.max(10, T.morale - 4); } } ] }
+];
+function pickStakeMoment(g) {
+  const T = g.player;
+  if (!T || T.ended || g.phase !== 'execution') return null;
+  const used = g.usedMoments || (g.usedMoments = []);
+  const elig = STAKE_MOMENTS.filter(m => !used.includes(m.id) && m.when(T, g));
+  if (!elig.length) return null;
+  return elig[Math.floor(rand(g) * elig.length)].id;
+}
+// ------------------------------ status reports ------------------------------
+function reportData(T, g) {
+  const e = T.baseline ? evmT(T) : null;
+  const fin = forecastT(T, g.week);
+  const risks = [];
+  if (overallocation(T.plan).some(o => o.week > g.week)) risks.push('resource overallocation ahead');
+  if (T.morale < 55) risks.push('team morale degraded (' + Math.round(T.morale) + '%)');
+  if (e && e.CPI < 0.9) risks.push('cost efficiency below plan (CPI ' + e.CPI.toFixed(2) + ')');
+  if (fin > 14) risks.push('forecast go-live week ' + fin + ' vs charter week 14');
+  return { pct: Math.round(pctComplete(T.plan, T.progress) * 100), spent: Math.round(T.spent / 1000), cpi: e ? e.CPI : 1, spi: e ? e.SPI : 1, forecast: fin, risks };
+}
+function applyReport(T, g, mode) {
+  const d = reportData(T, g);
+  const bad = d.risks.length >= 2 || d.cpi < 0.85;
+  if (T.lastReport && T.lastReport.mode === 'spin') {
+    const worse = d.forecast > T.lastReport.forecast || d.cpi < T.lastReport.cpi - 0.05;
+    if (worse) { conf(T, -12); g.news.unshift({ week:g.week, icon:'📧', team:'League news', text:'Your previous report promised better numbers than reality delivered — committee credibility hit' }); }
+  }
+  if (mode === 'accurate') { conf(T, bad ? -3 : 5); g.news.unshift({ week:g.week, icon:'📧', team:'Your Team', text:'Status report sent — straight numbers' + (bad ? '. Hard conversation, trust intact.' : '. Committee pleased.') }); }
+  else if (mode === 'spin') { conf(T, 6); g.news.unshift({ week:g.week, icon:'📧', team:'Your Team', text:'Status report sent — polished. The committee smiled. Reality has a memory.' }); }
+  else { T.spent += 2000; conf(T, bad ? 4 : 6); g.news.unshift({ week:g.week, icon:'📧', team:'Your Team', text:'Status report sent with recovery-plan annex ($2K analyst time)' }); }
+  T.lastReport = { week:g.week, mode, forecast:d.forecast, cpi:d.cpi };
+}
+function settleCommitments(g) {
+  const T = g.player;
+  if (T._settled) return; T._settled = true;
+  if (T.publicDate) { const missed = !T.goLive || T.goLive > T.publicDate;
+    if (missed) { conf(T, T.publicDate === 14 ? -10 : -6); g.news.unshift({ week:g.week, icon:'📣', team:'League news', text:'The printed launch date was missed — marketing wears it, and so do you' }); }
+    else { conf(T, 5); g.news.unshift({ week:g.week, icon:'📣', team:'League news', text:'Public launch date HIT — marketing takes a victory lap with your name in it' }); } }
+  if (T.lastReport && T.lastReport.mode === 'spin' && (!T.goLive || T.goLive > T.lastReport.forecast)) { conf(T, -8); g.news.unshift({ week:g.week, icon:'📧', team:'League news', text:'Final reckoning: the polished reports did not survive contact with the actual go-live' }); }
+}
 
 // ------------------------------ archetypes ------------------------------
 const ARCHETYPES = [
@@ -703,7 +833,7 @@ function finalScore(T) {
   const secGap = T.goLive && !(isDoneT(T, 'qt5') && isDoneT(T, 'pt2')) ? 60 : 0; // security findings post-launch
   const delivery = Math.max(0, Math.min(250, Math.round(gotVal / totVal * 170) + (isDoneT(T, 't6') ? 40 : 0) + (isDoneT(T, 'ct2') ? 40 : 0)) - perfGap);
   const quality = Math.max(0, Math.min(250, Math.round(Math.max(0, T.quality) * 1.7) + (isDoneT(T, 'qt5') ? 25 : 0) + (isDoneT(T, 'pt2') ? 25 : 0) + (isDoneT(T, 'qt3') ? 30 : 0)) - secGap);
-  const sponsorBonus = Math.max(0, Math.min(25, Math.round((T.sponsorSat - 70) / 2)));
+  const sponsorBonus = Math.max(0, Math.min(25, Math.round((T.sponsorSat - 70) * 0.85)));
   const total = budget + schedule + delivery + quality + (T.leagueBonus || 0) + sponsorBonus;
   const grade = total >= 850 ? 'S' : total >= 750 ? 'A' : total >= 650 ? 'B' : total >= 550 ? 'C' : total >= 450 ? 'D' : 'F';
   return { budget, schedule, delivery, quality, total, grade };
@@ -808,11 +938,19 @@ function leagueRound(G, playerTactic) {
   const ev = EVENTS.find(e => e.round === G.round);
   if (ev && !G.player.ended) { G.pendingEvent = ev; G.eventResolved = false; applyAIEvent(G, ev); }
   else { G.pendingEvent = null; G.eventResolved = true; if (ev) applyAIEvent(G, ev); }
+  if (!G.player.ended && G.phase === 'execution') {
+    if (G.round === 2 || G.round === 4) G.pendingReport = true;
+    if (!G.pendingStakeId && rand(G) < ((G.pendingEvent && !G.eventResolved) ? 0.35 : 0.7)) {
+      const mid = pickStakeMoment(G);
+      if (mid) { G.pendingStakeId = mid; (G.usedMoments = G.usedMoments || []).push(mid); }
+    }
+  }
   // once the player is done, fast-forward rivals to their own endings
   if (G.player.ended) {
     let w = G.week, guard = 0;
     while (G.rivals.some(T => !T.ended) && guard++ < 30) { w++; for (const T of G.rivals) advanceTeamWeek(T, w); }
     G.week = Math.max(G.week, w);
+    settleCommitments(G);
     G.phase = 'closing';
   }
 }
@@ -1221,6 +1359,7 @@ function dockHTML() {
   h += b('plan', '📐', 'Plan');
   if (T.baseline) h += b('reports', '📊', 'Reports');
   if (T.baseline) h += b('changes', '📋', 'Changes', T.crLog.length || '');
+  if (T.baseline) h += b('people', '👥', 'Stakeholders');
   h += b('standings', '🏆', 'Standings');
   h += b('scout', '🔭', 'Scouting');
   return h;
@@ -1231,6 +1370,8 @@ function endweekMeta() {
   if (G.phase === 'planning') return { label:'🔒 Lock baseline — start season', warn:false };
   if (G.phase === 'closing') return { label:'🔄 New season', warn:false };
   if (G.pendingEvent && !G.eventResolved) return { label:'⚠️ Resolve the event', warn:true };
+  if (G.pendingStakeId) return { label:'🤝 A stakeholder is waiting', warn:true };
+  if (G.pendingReport) return { label:'📧 Status report due — review & send', warn:true };
   if (T.ended) return { label:'🏁 Final standings', warn:false };
   return { label:'▶ End week ' + G.week + ' (run wks ' + (G.week + 1) + '–' + (G.week + WEEKS_PER_ROUND) + ')', warn:false };
 }
@@ -1248,12 +1389,50 @@ function guideHTML() {
   <p class="sub">After accepting the charter you choose who you are: Commander, Visionary, Servant Leader, Coach, Diplomat or Pacesetter (Goleman's six styles). Each has a real perk, a real flaw, and a different winning path. At closing, the game tells you which style you <i>actually played</i>.</p>
   <h3>⚔️ The league fights back</h3>
   <p class="sub">First team to go-live claims the Market Window (+40); first verified security takes the Quality Cup (+30) — rivals' progress bars are threats. The league leader attracts auditors, sponsor expectations and recruiter raids (high morale or fresh team building repels them). And your 🕵️ Poach tactic sends recruiters at the top rival. Sponsor satisfaction above 70 is worth up to +25 at closing.</p>
+  <h3>👥 Stakeholders</h3>
+  <p class="sub">Real projects are run in a crowd: an executive committee (VP, Finance, Operations, Marketing), your sponsor, your team, the customer, a key supplier. They pop up between rounds — the Finance Director interrogates your burn rate against your actual CPI, the customer files change requests, your designer negotiates for quality time. Most requests can be accepted, declined, or <b>countered</b> — counter-offers land more often when committee confidence is high. Twice a season a <b>status report</b> is due: review the draft and choose — straight numbers, a polished narrative (the committee compares reports to reality later), or a paid recovery-plan annex. Promised a public launch date? Miss it and the committee remembers at closing.</p>
   <h3>🎯 Round tactics</h3>
   <p class="sub">Every round you pick one play: team building, overtime, quality sweep, executive lunch, a skunkworks gamble — or hold steady. Rivals play their own style, and league-wide micro-events (flu, vendor discounts, long weekends) hit everyone. Same seed = same season; every new game rolls differently.</p>
   <h3>▶ End week</h3>
   <p class="sub">Runs 3 weeks for ALL teams. Events interrupt between rounds — the sponsor, the SAP team, Paul, the steering committee. Every choice reshapes your plan; every post-baseline edit is a logged change request. Watch the crash premium (finishing faster than the estimate costs 70% of the labour you saved) and don't skip the load test or pen test — launch-day incidents are expensive.</p>
   <h3>🏆 Winning</h3>
   <p class="sub">Highest score at season end takes the podium. Meridian Group scores ~836 — beat that and you have beaten the engine.</p>`;
+}
+function reportHTML() {
+  const T = G.player, d = reportData(T, G);
+  const riskLines = d.risks.length ? d.risks.map(r => '• ' + r).join('<br>') : '• no material risks to report';
+  return `<p class="sub">Your status report is due to the executive committee. Review the draft — what you send shapes their confidence, and they compare reports to reality.</p>
+  <div style="background:#f7f8fd;border:2px solid var(--line);border-radius:16px;padding:18px 20px;font-size:.95rem;line-height:1.7">
+    <div style="color:var(--mut);font-size:.8rem">From: You — Project Manager, ${CHARTER.projectName}<br>To: Executive Committee (V. Alvarez, A. Okafor, D. Roy, L. Park, S. Chen)<br>Subject: Status report — Week ${G.week}</div>
+    <hr style="border:none;border-top:1px solid var(--line)">
+    <b>Progress:</b> ${d.pct}% complete · SPI ${d.spi.toFixed(2)}<br>
+    <b>Financials:</b> $${d.spent}K spent of $160K · CPI ${d.cpi.toFixed(2)} (each planned dollar buying ${Math.round(d.cpi * 100)}¢)<br>
+    <b>Forecast:</b> go-live ≈ week ${d.forecast} <span class="${d.forecast <= 14 ? 'ok' : 'bad'}">(charter: week 14)</span><br>
+    <b>Risks:</b><br>${riskLines}
+  </div>
+  <h3>How do you send it?</h3>
+  <button class="opt" onclick="sendReport('accurate')"><b>📤 Send as-is — the straight numbers</b><small>Committee reacts to reality: +5 confidence if healthy, −3 and a hard conversation if not. Trust always intact.</small></button>
+  <button class="opt" onclick="sendReport('spin')"><b>✨ Polish the narrative — soften the risks, round the forecast</b><small>+6 confidence today. But the committee compares reports to results: if reality comes in worse, −12 later.</small></button>
+  <button class="opt" onclick="sendReport('plan')"><b>📎 Attach a recovery-plan annex ($2K analyst time)</b><small>+4 to +6 confidence and it cushions bad numbers — the professional play when the report is ugly.</small></button>`;
+}
+window.sendReport = (mode) => {
+  applyReport(G.player, G, mode);
+  G.pendingReport = false; uiPopup = null;
+  saveGame(); render(); toast('Report sent to the committee.');
+};
+function stakeholdersHTML() {
+  const T = G.player;
+  const cards = Object.entries(STAKEHOLDERS).map(([k, sp]) => `<div class="rival" style="border-top-color:#8b93d6"><div class="ravatar" style="background:${sp.color}">${sp.icon}</div><b>${sp.name}</b><div class="tag">${sp.role}</div></div>`).join('');
+  const log = T.decisions.filter(d => d.round === 'S').map(d => `<div>${d.label}</div>`).join('') || '<span class="sub">No stakeholder interactions yet.</span>';
+  return `<div class="kpis">
+      <div class="kpi"><b class="${T.sponsorSat >= 70 ? 'ok' : T.sponsorSat >= 50 ? 'warn' : 'bad'}">${Math.round(T.sponsorSat)}%</b><span>Committee confidence</span></div>
+      <div class="kpi"><b>${T.publicDate ? 'wk ' + T.publicDate : 'none'}</b><span>Public date promised</span></div>
+      <div class="kpi"><b>${T.lastReport ? 'wk ' + T.lastReport.week + ' · ' + T.lastReport.mode : 'none yet'}</b><span>Last report</span></div>
+    </div>
+    <p class="sub">Confidence feeds your closing bonus (up to +25) — and stakeholders compare what you promised with what you delivered.</p>
+    <div class="rival-grid">${cards}</div>
+    <h3>Your stakeholder decisions</h3>
+    <div class="log" style="max-height:220px">${log}</div>`;
 }
 function assemblyHTML() {
   const BP = BLUEPRINTS[ACTIVE_BLUEPRINT];
@@ -1269,14 +1448,16 @@ function assemblyHTML() {
   <h3>Assembly manual — component ↔ task</h3>
   <table><tr><th>Station component</th><th>Project task</th><th>Status</th></tr>${rows}</table>`;
 }
-const POPUP_TITLES = { assembly:'🛰️ Orbital Portal Station — full assembly', leader:'👤 Choose your leadership style', tactics:'🎯 Choose your play — weeks ' , guide:'❓ How to play', charter:'📜 Project Charter — ' , plan:'📐 Living project plan', reports:'📊 Monitor & Control', changes:'📋 Change control', standings:'🏆 League standings', scout:'🔭 Scouting reports', task:'', final:'🏁 Season review' };
+const POPUP_TITLES = { report:'📧 Status report — review before sending', people:'👥 Stakeholders', assembly:'🛰️ Orbital Portal Station — full assembly', leader:'👤 Choose your leadership style', tactics:'🎯 Choose your play — weeks ' , guide:'❓ How to play', charter:'📜 Project Charter — ' , plan:'📐 Living project plan', reports:'📊 Monitor & Control', changes:'📋 Change control', standings:'🏆 League standings', scout:'🔭 Scouting reports', task:'', final:'🏁 Season review' };
 window.openPopup = k => { uiPopup = k; render(); };
 window.closePopup = () => { uiPopup = null; taskIdx = -1; render(); };
 function popupHTML() {
   if (!uiPopup) return '';
   let title = POPUP_TITLES[uiPopup] || '';
   let body = '';
-  if (uiPopup === 'assembly') body = assemblyHTML();
+  if (uiPopup === 'report') body = reportHTML();
+  else if (uiPopup === 'people') body = stakeholdersHTML();
+  else if (uiPopup === 'assembly') body = assemblyHTML();
   else if (uiPopup === 'leader') body = leaderSelectHTML();
   else if (uiPopup === 'tactics') { title += (G.week + 1) + '–' + (G.week + WEEKS_PER_ROUND); body = tacticsHTML(); }
   else if (uiPopup === 'charter') { title += CHARTER.projectName; body = charterHTML(); }
@@ -1291,8 +1472,30 @@ function popupHTML() {
   return `<div class="modal-back" onclick="if(event.target===this)closePopup()"><div class="modal"><button class="modal-x" onclick="closePopup()">✕</button><h2>${title}</h2>${body}</div></div>`;
 }
 function renderPopup() { document.getElementById('popuplayer').innerHTML = popupHTML(); }
+function stakeSceneHTML() {
+  if (!(G.phase === 'execution' && G.pendingStakeId && !(G.pendingEvent && !G.eventResolved))) return '';
+  const m = STAKE_MOMENTS.find(x => x.id === G.pendingStakeId); if (!m) return '';
+  const spk = STAKEHOLDERS[m.who], T = G.player;
+  return `<div class="leader-back">
+    <div class="leader-scene">
+      <div class="leader-portrait" style="background:${spk.color}">${spk.icon}</div>
+      <div class="leader-name">${spk.name}</div>
+      <div class="leader-title">${spk.role} · ${m.kind} · Week ${G.week}</div>
+      <div class="leader-text">${m.text(T, G)}</div>
+      ${m.options.map((o, i) => `<button class="opt" onclick="stakeDecide(${i})"><b>${o.label}</b><small>${o.hint}</small></button>`).join('')}
+      <div class="leader-anna"><span style="font-size:1.3rem">👩‍💼</span> ANNA: confidence ${Math.round(T.sponsorSat)}% · counter-offers land more often when confidence is high${ldr(T) === 'diplomat' ? ' — and you are a Diplomat (+20%)' : ''}.</div>
+    </div>
+  </div>`;
+}
+window.stakeDecide = (i) => {
+  const m = STAKE_MOMENTS.find(x => x.id === G.pendingStakeId); if (!m) { G.pendingStakeId = null; render(); return; }
+  m.options[i].fx(G.player, G);
+  G.player.decisions.push({ round:'S', label:STAKEHOLDERS[m.who].name + ': ' + m.options[i].label });
+  G.pendingStakeId = null;
+  saveGame(); render(); toast('Noted. Stakeholders remember.');
+};
 function leaderHTML() {
-  if (!(G.phase === 'execution' && G.pendingEvent && !G.eventResolved)) return '';
+  if (!(G.phase === 'execution' && G.pendingEvent && !G.eventResolved)) return stakeSceneHTML();
   const ev = G.pendingEvent, spk = EVENT_SPEAKERS[ev.round], T = G.player;
   const fin = forecastT(T, G.week);
   return `<div class="leader-back">
@@ -1344,6 +1547,8 @@ window.doEndWeek = () => {
   }
   if (G.phase === 'closing') { clearSave(); location.reload(); return; }
   if (G.pendingEvent && !G.eventResolved) { render(); return; }
+  if (G.pendingStakeId) { render(); return; }
+  if (G.pendingReport) { uiPopup = 'report'; render(); return; }
   if (!T.ended && G.phase === 'execution') { uiPopup = 'tactics'; render(); return; }
   runRoundWith('none');
 };

@@ -70,12 +70,12 @@ console.log('\n━━━ 2. Leader viability (5 seeds each) ━━━');
 console.log('\n━━━ 3. Virtual players (full UI, 6 personas × 2 seeds) ━━━');
 let JSDOM; try { ({ JSDOM } = require('jsdom')); } catch (e) { fail('jsdom not installed — run: npm install jsdom --no-save'); report(); }
 const PERSONAS = {
-  commander: { ev:{1:1,2:1,3:0,4:0}, deck:(T)=> T.morale<45?'teambuild':'overtime' },
-  visionary: { ev:{1:0,2:1,3:1,4:1}, deck:(T,r)=> r%2?'quality':'lunch' },
-  servant:   { ev:{1:1,2:0,3:1,4:1}, deck:(T)=> T.morale<80?'teambuild':'quality', keepQt2:true },
-  coach:     { ev:{1:1,2:0,3:0,4:1}, deck:(T,r)=> r%2?'teambuild':'quality' },
-  diplomat:  { ev:{1:1,2:1,3:1,4:2}, deck:(T,r)=> ['poach','lunch','quality'][r%3] },
-  pacesetter:{ ev:{1:2,2:2,3:2,4:0}, deck:()=>'overtime', midEdit:true } };
+  commander: { ev:{1:1,2:1,3:0,4:0}, deck:(T)=> T.morale<45?'teambuild':'overtime', stake:1, report:'accurate' },
+  visionary: { ev:{1:0,2:1,3:1,4:1}, deck:(T,r)=> r%2?'quality':'lunch', stake:0, report:'plan' },
+  servant:   { ev:{1:1,2:0,3:1,4:1}, deck:(T)=> T.morale<80?'teambuild':'quality', keepQt2:true, stake:0, report:'accurate' },
+  coach:     { ev:{1:1,2:0,3:0,4:1}, deck:(T,r)=> r%2?'teambuild':'quality', stake:0, report:'accurate' },
+  diplomat:  { ev:{1:1,2:1,3:1,4:2}, deck:(T,r)=> ['poach','lunch','quality'][r%3], stake:1, report:'plan' },
+  pacesetter:{ ev:{1:2,2:2,3:2,4:0}, deck:()=>'overtime', midEdit:true, stake:2, report:'spin' } };
 const issues = [];
 function flag(tag, msg) { const k = tag + ': ' + msg; if (!issues.includes(k)) issues.push(k); }
 function goodPlanUI(w) { const P = w.PML.player; const idx = id => P.plan.tasks.findIndex(t => t.id === id);
@@ -92,6 +92,7 @@ function invariants(w, tag) { const G = w.PML;
   for (const T of G.teams) {
     for (const k of ['spent','morale','quality','sponsorSat']) if (!isFinite(T[k])) flag(tag, `non-finite ${k} on ${T.id}`);
     if (T.morale < 0 || T.morale > 100.01) flag(tag, `morale out of range on ${T.id}`);
+    if (T.isPlayer && (T.sponsorSat < -0.01 || T.sponsorSat > 100.01)) flag(tag, `player confidence unclamped: ${T.sponsorSat}`);
     if (T.quality < -0.01) flag(tag, `negative quality on ${T.id}`);
     if (T.spent < (T._ls || 0) - 0.01) flag(tag, `spent decreased on ${T.id}`); T._ls = T.spent;
     for (const t of T.plan.tasks) if ((T.progress[t.id] || 0) > t.dur + 0.05) flag(tag, `progress>dur on ${T.id}/${t.id}`);
@@ -123,6 +124,13 @@ async function playSeason(leader, seed) { const tag = leader + '/s' + seed; cons
       if (w.PML.pendingEvent && !w.PML.eventResolved) {
         if (!w.document.querySelector('.leader-back')) flag(tag, 'event scene not rendered');
         w.decide(persona.ev[w.PML.pendingEvent.round]); continue; }
+      if (w.PML.pendingStakeId) {
+        if (!w.document.querySelector('.leader-back')) flag(tag, 'stakeholder scene not rendered');
+        w.stakeDecide(persona.stake || 0); continue; }
+      if (w.PML.pendingReport) {
+        w.doEndWeek();
+        if (!w.document.querySelector('.modal')) flag(tag, 'report popup not rendered');
+        w.sendReport(persona.report || 'accurate'); continue; }
       if (w.PML.player.ended) { w.doEndWeek(); continue; }
       w.doEndWeek(); if (w.PML.phase !== 'execution') continue;
       let t = persona.deck(w.PML.player, r); if (leader === 'diplomat' && t === 'overtime') t = 'lunch';
