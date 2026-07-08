@@ -135,14 +135,17 @@
   #lanes { display:flex; flex-direction:column; gap:4px; background:rgba(10,8,40,.45); border-radius:14px; padding:8px 14px; }
   .lane { display:flex; align-items:center; gap:8px; }
   .lane .lav { width:22px; height:22px; min-width:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.75rem; color:#fff; }
+  .lane .lname { font-size:.78rem; font-weight:900; color:#fff; min-width:190px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .lane .ltrack { flex:1; height:7px; background:rgba(255,255,255,.14); border-radius:999px; overflow:hidden; }
   .lane .ltrack i { display:block; height:7px; border-radius:999px; transition:width .6s; }
   .lane .lpts { font-size:.72rem; font-weight:800; color:#e0e7ff; min-width:104px; text-align:right; white-space:nowrap; }
   #stagewrap { flex:1; display:flex; gap:10px; min-height:0; }
-  #stage { flex:1; position:relative; border-radius:20px; overflow:hidden; background:rgba(10,8,40,.28); box-shadow:inset 0 0 0 2px rgba(255,255,255,.12); display:flex; flex-direction:column; }
+  #stage { flex:1; position:relative; border-radius:20px; overflow:hidden; background:linear-gradient(180deg,#252057 0%,#33296e 55%,#4a3f8f 100%); box-shadow:inset 0 0 0 2px rgba(255,255,255,.14), 0 8px 30px rgba(0,0,0,.3); display:flex; flex-direction:column; }
+  #stage .site-wrap { flex:1; display:flex; align-items:flex-end; justify-content:center; min-height:0; padding:0 10px; }
   .stage-head { padding:8px 16px 0; color:#e0e7ff; font-weight:900; font-size:.95rem; text-shadow:0 2px 6px rgba(0,0,0,.5); display:flex; gap:10px; align-items:center; }
   .stage-head small { font-weight:700; color:#a5b4fc; }
-  #stage svg { flex:1; width:100%; min-height:0; }
+  #stage svg { width:100%; height:100%; max-height:600px; }
+  .stage-banner { margin:0 16px 6px; background:rgba(251,191,36,.16); border:2px solid rgba(251,191,36,.5); color:#fde68a; border-radius:12px; padding:7px 14px; font-size:.88rem; font-weight:800; }
   #notifs { width:248px; min-width:200px; overflow-y:auto; display:flex; flex-direction:column; gap:7px; }
   .notif { background:rgba(255,255,255,.95); border-radius:14px; padding:9px 12px; font-size:.82rem; font-weight:700; color:#3b3f66; box-shadow:0 4px 12px rgba(0,0,0,.18); animation:fadeup .4s ease; }
   .notif small { color:#8b90b5; font-weight:800; display:block; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; }
@@ -846,16 +849,18 @@ function cityHTML() {
     const activeNow = !t.cut && !done && G.week + 1 >= t.start && G.phase === 'execution';
     const color = DIST_COLOR[t.type];
     const x = t._x;
-    if (t.cut) return `<g style="cursor:pointer" opacity=".55" onclick="openTask(${idx})"><rect x="${x}" y="${groundY-12}" width="${w}" height="12" rx="3" fill="#64748b"/><text x="${x+w/2}" y="${groundY+16}" text-anchor="middle" font-size="12" font-weight="800" fill="#cbd5f5">${SHORT[t.id]||'CR'} ✂️</text></g>`;
-    const windows = bh > 26 ? `<rect x="${x+w*0.2}" y="${groundY-bh+8}" width="${w*0.16}" height="${Math.max(0,bh-16)}" fill="#fde68a" opacity=".38"/><rect x="${x+w*0.62}" y="${groundY-bh+8}" width="${w*0.16}" height="${Math.max(0,bh-16)}" fill="#fde68a" opacity=".38"/>` : '';
-    const topper = done ? `<text x="${x+w/2}" y="${groundY-H-8}" text-anchor="middle" font-size="17">🚩</text>`
-      : activeNow ? `<text x="${x+w/2}" y="${groundY-bh-8}" text-anchor="middle" font-size="15">${overNow.includes(t.res) ? '⚠️' : '👷'}</text>` : '';
-    return `<g style="cursor:pointer" ${dim ? 'opacity=".85"' : ''} onclick="openTask(${idx})">
-      <rect x="${x}" y="${groundY-H}" width="${w}" height="${H}" rx="5" fill="rgba(255,255,255,.05)" stroke="#c7d2fe" stroke-dasharray="6 5" stroke-width="1.6" opacity=".75"/>
+    if (t.cut) return `<g style="cursor:pointer" opacity=".6" onclick="openTask(${idx})"><rect x="${x}" y="${groundY-12}" width="${w}" height="12" rx="3" fill="#64748b"/><text x="${x+w/2}" y="${groundY+18}" text-anchor="middle" font-size="13" font-weight="800" fill="#cbd5f5">${SHORT[t.id]||'CR'} ✂️</text></g>`;
+    const windows = bh > 26 ? `<rect x="${x+w*0.2}" y="${groundY-bh+8}" width="${w*0.16}" height="${Math.max(0,bh-16)}" fill="#fde68a" opacity=".45"/><rect x="${x+w*0.62}" y="${groundY-bh+8}" width="${w*0.16}" height="${Math.max(0,bh-16)}" fill="#fde68a" opacity=".45"/>` : '';
+    const crane = `<path d="M${x+w-8} ${groundY-H-4} v-14 h-${w*0.7} m14 0 v8" stroke="#fbbf24" stroke-width="2.5" fill="none"/>`;
+    const topper = done ? `<text x="${x+w/2}" y="${groundY-H-10}" text-anchor="middle" font-size="18">🚩</text>`
+      : activeNow ? `<text x="${x+w/2}" y="${groundY-bh-10}" text-anchor="middle" font-size="16">${overNow.includes(t.res) ? '⚠️' : '👷'}</text>` : (frac < 0.999 ? crane : '');
+    return `<g style="cursor:pointer" ${dim ? 'opacity=".9"' : ''} onclick="openTask(${idx})">
+      <rect x="${x}" y="${groundY-H}" width="${w}" height="${H}" rx="5" fill="rgba(255,255,255,.13)" stroke="#aab8ff" stroke-dasharray="7 5" stroke-width="2"/>
+      ${H > 40 ? `<line x1="${x+4}" y1="${groundY-H*0.5}" x2="${x+w-4}" y2="${groundY-H*0.5}" stroke="#aab8ff" stroke-width="1" opacity=".4"/>` : ''}
       <rect x="${x}" y="${groundY-bh}" width="${w}" height="${bh}" rx="5" fill="${color}"/>
       ${windows}${topper}
-      <text x="${x+w/2}" y="${groundY+16}" text-anchor="middle" font-size="12" font-weight="800" fill="#e0e7ff">${SHORT[t.id]||'CR'}</text>
-      <text x="${x+w/2}" y="${groundY+31}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#a5b4fc">${Math.round(frac*100)}% · wk${t.start}·${t.dur}w</text>
+      <text x="${x+w/2}" y="${groundY+18}" text-anchor="middle" font-size="13.5" font-weight="800" fill="#ffffff">${SHORT[t.id]||'CR'}</text>
+      <text x="${x+w/2}" y="${groundY+34}" text-anchor="middle" font-size="11.5" font-weight="700" fill="#c3cdff">${Math.round(frac*100)}% · wk${t.start} · ${t.dur}w</text>
     </g>`;
   }).join('');
   const scope = p.tasks.filter(t => t.type === 'scope');
@@ -864,15 +869,22 @@ function cityHTML() {
   scope.forEach(t => { t._x = x; x = x + fw + fgap; });
   let x2 = 60; const bw = 78, bgap = 18;
   support.forEach(t => { t._x = x2; x2 = x2 + bw + bgap; });
-  const legend = Object.entries({scope:'Scope towers',quality:'Quality lab',risk:'Risk bunker',comm:'Comms hub',proc:'Procurement docks'}).map(([k,v]) => `<tspan fill="${DIST_COLOR[k]}">■</tspan> <tspan fill="#c7d2fe">${v}</tspan>  `).join('');
-  return `<div class="stage-head">🏗️ ${CHARTER.projectName} <small>— your build site · click a building to inspect/edit the task</small></div>
-  <svg viewBox="0 0 1280 470" preserveAspectRatio="xMidYMax meet">
-    <text x="46" y="26" font-size="13" font-weight="700">${legend}</text>
-    <line x1="30" y1="300" x2="1250" y2="300" stroke="#8b90c9" stroke-width="1.5" opacity=".5"/>
+  const legend = Object.entries({scope:'Scope towers',quality:'Quality lab',risk:'Risk bunker',comm:'Comms hub',proc:'Procurement docks'}).map(([k,v]) => `<tspan fill="${DIST_COLOR[k]}" font-size="16">■</tspan> <tspan fill="#e0e7ff">${v}</tspan>  `).join('');
+  const banner = G.phase !== 'execution'
+    ? `<div class="stage-banner">📐 PLANNING MODE — nothing is built yet: dashed outlines are the planned buildings. Click any building to review/fix its task, then hit <b>Lock baseline</b>. Rivals are already locked.</div>`
+    : (G.player.ended ? `<div class="stage-banner">${G.player.terminated ? '💥 ' : '🏁 '}${G.player.endReason}</div>` : '');
+  return `<div class="stage-head">🏗️ ${CHARTER.projectName} <small>— your build site · buildings rise as tasks progress · click one to inspect/edit</small></div>
+  ${banner}
+  <div class="site-wrap"><svg viewBox="0 0 1280 480" preserveAspectRatio="xMidYMax meet">
+    <text x="46" y="24" font-size="14" font-weight="800">${legend}</text>
+    <rect x="0" y="300" width="1280" height="180" fill="rgba(12,9,45,.35)"/>
+    <text x="1250" y="292" text-anchor="end" font-size="12" font-weight="800" fill="#8b93d6">SUPPORT DISTRICT ↓</text>
     ${drawRow(support, 300, bw, 14, 90, true)}
-    <line x1="20" y1="432" x2="1260" y2="432" stroke="#c7d2fe" stroke-width="2" opacity=".8"/>
-    ${drawRow(scope, 432, fw, 26, 290, false)}
-  </svg>`;
+    <rect x="0" y="436" width="1280" height="44" fill="rgba(12,9,45,.5)"/>
+    <line x1="0" y1="436" x2="1280" y2="436" stroke="#aab8ff" stroke-width="2.5" opacity=".9"/>
+    <text x="1250" y="428" text-anchor="end" font-size="12" font-weight="800" fill="#8b93d6">SCOPE AVENUE ↓</text>
+    ${drawRow(scope, 436, fw, 26, 290, false)}
+  </svg></div>`;
 }
 function podiumStageHTML() {
   const scored = G.teams.map(T => ({ T, s: finalScore(T) })).sort((a, b) => b.s.total - a.s.total);
@@ -957,8 +969,9 @@ function lanesHTML() {
   return scored.map(({ T, s }) => {
     const pct = Math.round(pctComplete(T.plan, T.progress) * 100);
     return `<div class="lane"><div class="lav" style="background:${T.color}">${T.icon}</div>
+      <div class="lname">${T.isPlayer ? '🫵 YOU — ' : ''}${T.name}</div>
       <div class="ltrack"><i style="width:${pct}%;background:${T.color}"></i></div>
-      <div class="lpts">${T.isPlayer ? '🫵 ' : ''}${s.total} pts · ${T.ended ? (T.terminated ? '💥' : '🏁' + T.goLive) : pct + '%'}</div></div>`;
+      <div class="lpts">proj ${s.total} pts · ${T.ended ? (T.terminated ? '💥 out' : '🏁 wk' + T.goLive) : pct + '% built'}</div></div>`;
   }).join('');
 }
 function notifsHTML() {
@@ -989,7 +1002,8 @@ function annaLine() {
 function dockHTML() {
   const T = G.player;
   const b = (id, icon, label, badge) => `<button class="dockbtn" onclick="openPopup('${id}')">${icon} ${label}${badge ? '<span class="bdg">' + badge + '</span>' : ''}</button>`;
-  let h = b('charter', '📜', 'Charter');
+  let h = b('guide', '❓', 'Guide');
+  h += b('charter', '📜', 'Charter');
   h += b('plan', '📐', 'Plan');
   if (T.baseline) h += b('reports', '📊', 'Reports');
   if (T.baseline) h += b('changes', '📋', 'Changes', T.crLog.length || '');
@@ -1008,7 +1022,20 @@ function endweekMeta() {
 }
 
 // ---------------- popups & leader ----------------
-const POPUP_TITLES = { charter:'📜 Project Charter — ' , plan:'📐 Living project plan', reports:'📊 Monitor & Control', changes:'📋 Change control', standings:'🏆 League standings', scout:'🔭 Scouting reports', task:'', final:'🏁 Season review' };
+function guideHTML() {
+  return `<p class="sub" style="font-size:1rem">You are one of five teams delivering the <b>same project</b> from the <b>same charter</b>. Turn-based like Civilization: plan, end the week, react, repeat.</p>
+  <h3>🏗️ The build site (center)</h3>
+  <p class="sub">Your project drawn as a city. Front row = the 7 scope deliverables (towers, size = duration). Back row = support district: quality, risk responses, communications, procurement. Dashed outline = planned work · colored fill rising = actual progress · 👷 = crew working this week · ⚠️ = that resource is overallocated (everything it touches slows down) · 🚩 = done · ✂️ = cut from scope. <b>Click any building</b> to open that task and change start / duration / resource / allocation.</p>
+  <h3>📊 Top ribbon</h3>
+  <p class="sub">Week vs the 14-week charter cap · spend vs the $160K cap · SPI/CPI (schedule & cost efficiency vs YOUR baseline) · quality · morale · sponsor · your rank and projected score. Red chip = trouble. Click a chip for the full report.</p>
+  <h3>🏁 The league strip</h3>
+  <p class="sub">All five teams live: % built and projected final score (1000 pts = Budget 250 · Schedule 250 · Delivery 250 · Quality 250). Rivals face the same events you do.</p>
+  <h3>▶ End week</h3>
+  <p class="sub">Runs 3 weeks for ALL teams. Events interrupt between rounds — the sponsor, the SAP team, Paul, the steering committee. Every choice reshapes your plan; every post-baseline edit is a logged change request. Watch the crash premium (finishing faster than the estimate costs 70% of the labour you saved) and don't skip the load test or pen test — launch-day incidents are expensive.</p>
+  <h3>🏆 Winning</h3>
+  <p class="sub">Highest score at season end takes the podium. Meridian Group scores ~836 — beat that and you have beaten the engine.</p>`;
+}
+const POPUP_TITLES = { guide:'❓ How to play', charter:'📜 Project Charter — ' , plan:'📐 Living project plan', reports:'📊 Monitor & Control', changes:'📋 Change control', standings:'🏆 League standings', scout:'🔭 Scouting reports', task:'', final:'🏁 Season review' };
 window.openPopup = k => { uiPopup = k; render(); };
 window.closePopup = () => { uiPopup = null; taskIdx = -1; render(); };
 function popupHTML() {
@@ -1022,6 +1049,7 @@ function popupHTML() {
   else if (uiPopup === 'standings') body = `<p class="sub">Live projected final scores — 1000 pts across Budget · Schedule · Delivery · Quality.</p>` + standingsHTML(G.phase === 'closing');
   else if (uiPopup === 'scout') body = `<p class="sub">Four rivals, same charter, four philosophies. Their baselines are locked.</p>` + rivalCards(G.phase !== 'initiation');
   else if (uiPopup === 'task') { const t = G.player.plan.tasks[taskIdx]; title = (t ? t.icon + ' ' + t.name : ''); body = taskHTML(); }
+  else if (uiPopup === 'guide') body = guideHTML();
   else if (uiPopup === 'final') body = finalHTML();
   return `<div class="modal-back" onclick="if(event.target===this)closePopup()"><div class="modal"><button class="modal-x" onclick="closePopup()">✕</button><h2>${title}</h2>${body}</div></div>`;
 }
