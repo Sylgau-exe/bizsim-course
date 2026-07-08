@@ -17,3 +17,5 @@ npm install jsdom --no-save
 node tests/qa.cjs
 ```
 Exit 0 = pass, 1 = fail (with the list of problems).
+
+_CI verified: first automated run triggered July 8, 2026._
