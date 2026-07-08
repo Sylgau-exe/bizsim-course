@@ -261,7 +261,7 @@
   </div>
 </div>
 <header>
-  <h1>🏆 PM LEAGUE <span style="font-size:.6rem;font-weight:800;color:#ddd6fe;vertical-align:6px" id="gamever">v8.0</span></h1>
+  <h1>🏆 PM LEAGUE <span style="font-size:.6rem;font-weight:800;color:#ddd6fe;vertical-align:6px" id="gamever">v8.1</span></h1>
   <div id="ribbon"></div>
 </header>
 <main id="main">
@@ -719,12 +719,23 @@ function criteriaOf(T) {
     { name:'Charter constraint: go-live ≤ week 14', ok: !!T.goLive && T.goLive <= 14 }
   ];
 }
+function projSig(T) {
+  let sig = T.week * 131 + Math.round(T.spent) + Math.round(T.morale * 7) + Math.round(T.quality * 13) + Math.round(T.sponsorSat * 3) + (T.leagueBonus || 0) * 17 + (T.crunchOn ? 999 : 0);
+  for (const t of T.plan.tasks) sig = (sig * 33 + t.start * 7 + t.dur * 13 + t.alloc + (t.cut ? 991 : 0) + Math.round((T.progress[t.id] || 0) * 100)) | 0;
+  for (const r of T.plan.resources) sig = (sig * 33 + r.rate + r.availability) | 0;
+  return sig;
+}
 function projectScore(T) {
   if (T.ended) return finalScore(T);
+  const sig = projSig(T);
+  if (T._pc && T._pc.sig === sig) return T._pc.v;
   const C = JSON.parse(JSON.stringify(T));
+  delete C._pc;
   let w = C.week, guard = 0;
   while (!C.ended && guard++ < 30) { w++; advanceTeamWeek(C, w); }
-  return finalScore(C);
+  const v = finalScore(C);
+  T._pc = { sig, v };
+  return v;
 }
 
 // ------------------------------ league state ------------------------------
