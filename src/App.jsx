@@ -5644,8 +5644,7 @@ export default function BizSimHub() {
               <p style={{ margin: '4px 0 0', color: '#5c636a', fontSize: '0.9rem' }}>{A({ en: 'Who completed the simulations, their scores, strengths and weaknesses', fr: 'Qui a complété les simulations, leurs scores, forces et faiblesses', es: 'Quién completó las simulaciones, sus puntajes, fortalezas y debilidades', vi: 'Ai đã hoàn thành mô phỏng, điểm số, điểm mạnh và điểm yếu' })}</p>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn-secondary" onClick={() => window.open('/lab/lifecycle.html', '_blank')}>🧪 {A({ en: 'R&D Lab', fr: 'Labo R&D', es: 'Lab I+D', vi: 'Phòng thí nghiệm R&D' })}</button>
-              <button className="btn-secondary" onClick={() => window.open('/lab/plan.html', '_blank')}>📐 {A({ en: 'Plan/Charter (R&D)', fr: 'Plan/Charte (R&D)', es: 'Plan/Acta (I+D)', vi: 'Kế hoạch/Hiến chương (R&D)' })}</button>
+              <button className="btn-secondary" onClick={() => window.open('/lab/index.html', '_blank')}>🧪 {A({ en: 'R&D Lab', fr: 'Labo R&D', es: 'Lab I+D', vi: 'Phòng thí nghiệm R&D' })}</button>
               <button className="btn-primary" onClick={exportCsv}>⬇️ {A({ en: 'Export CSV', fr: 'Exporter CSV', es: 'Exportar CSV', vi: 'Xuất CSV' })}</button>
             </div>
           </div>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>R&D Lab — BizSim</title>
+<style>
+  :root { --ink:#1a1a2e; --mut:#5c636a; --line:#e2e8f0; --red:#ED1B2F; --blue:#6366f1; --green:#10b981; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,'Segoe UI',Roboto,sans-serif; background:#f8f9fa; color:var(--ink); }
+  header { background:#fff; border-bottom:1px solid var(--line); padding:14px 24px; display:flex; align-items:center; gap:14px; }
+  header h1 { font-size:1.1rem; margin:0; }
+  .rd-badge { background:rgba(237,27,47,.08); color:var(--red); font-size:.72rem; font-weight:700; padding:3px 10px; border-radius:12px; }
+  a.back { margin-left:auto; font-size:.85rem; color:var(--blue); text-decoration:none; }
+  main { max-width:900px; margin:0 auto; padding:28px 20px; }
+  .intro { color:var(--mut); font-size:.9rem; line-height:1.6; margin-bottom:22px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:760px){ .grid { grid-template-columns:1fr; } }
+  .card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px; display:flex; flex-direction:column; }
+  .card .icon { font-size:2rem; }
+  .card h2 { font-size:1.05rem; margin:10px 0 6px; }
+  .card p { color:var(--mut); font-size:.85rem; line-height:1.6; flex:1; margin:0 0 14px; }
+  .tag { display:inline-block; font-size:.66rem; font-weight:700; padding:2px 9px; border-radius:10px; margin-left:8px; vertical-align:middle; }
+  .tag.proto { background:#fef3c7; color:#92400e; }
+  .tag.ported { background:#e0e7ff; color:#3730a3; }
+  .btn { display:inline-block; text-align:center; background:var(--blue); color:#fff; border-radius:8px; padding:10px 16px; font-weight:600; font-size:.86rem; text-decoration:none; }
+  .note { margin-top:22px; font-size:.78rem; color:var(--mut); background:#fff; border:1px dashed var(--line); border-radius:10px; padding:10px 14px; line-height:1.6; }
+</style>
+<script>
+(async () => {
+  document.documentElement.style.visibility = 'hidden';
+  try {
+    const tok = localStorage.getItem('bsim_token');
+    if (!tok) throw 0;
+    const r = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + tok } });
+    const d = await r.json();
+    if (!d.user || !d.user.is_admin) throw 0;
+    document.documentElement.style.visibility = '';
+  } catch (e) {
+    document.body.innerHTML = '<div style="font-family:sans-serif;padding:3rem;text-align:center;color:#5c636a"><h2>🔒 Not available</h2><p>This page requires an administrator session on this platform.</p><p><a href="/">Back to BizSim</a></p></div>';
+    document.documentElement.style.visibility = '';
+  }
+})();
+</script>
+</head>
+<body>
+<header>
+  <h1>🧪 R&D Lab</h1>
+  <span class="rd-badge">NOT PUBLIC — ADMIN ONLY</span>
+  <a class="back" href="/">← Back to BizSim</a>
+</header>
+<main>
+  <p class="intro">Experimental initiatives — prototypes exploring the next generation of BizSim tools. Nothing here is visible to students or demo participants.</p>
+  <div class="grid">
+    <div class="card">
+      <span class="icon">🔄</span>
+      <h2>Lifecycle Simulation <span class="tag proto">PROTOTYPE</span></h2>
+      <p>Full project lifecycle — Initiation → Planning → Execution → Monitoring &amp; Control → Closing — where the <b>project plan is the engine</b>: every simulation variable derives live from the plan the player maintains, and every mid-flight edit is a logged change request. Uses the real Enterprise Portal charter &amp; first-pass plan (with its authentic flaws).</p>
+      <a class="btn" href="/lab/lifecycle.html">Open Lifecycle Simulation →</a>
+    </div>
+    <div class="card">
+      <span class="icon">📐</span>
+      <h2>Plan/Charter Tool <span class="tag ported">PORTED FROM YCBS 288</span></h2>
+      <p>The full Charter (9 sections) &amp; Project Plan (11 sections) team tool — Gantt, resources, budget, risks, print modes, and MARCUS as AI coach. Runs on an isolated R&amp;D database (team data from the live course tool is untouched). Candidate front-end for the lifecycle engine: plan here, simulate there.</p>
+      <a class="btn" href="/lab/plan.html">Open Plan/Charter Tool →</a>
+    </div>
+  </div>
+  <p class="note">🎯 <b>North star:</b> fuse the two — students build/repair the plan in the Plan/Charter tool, baseline it, and the lifecycle engine simulates that exact plan, round by round, with re-planning as the core skill.</p>
+</main>
+</body>
+</html>
