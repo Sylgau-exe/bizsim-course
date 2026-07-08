@@ -390,7 +390,7 @@ const LEADERS = [
     flaw:'Consensus culture: overtime is never an option',
     path:'Win by working the system — money, influence, and patience.' },
   { id:'pacesetter', icon:'⚡', name:'The Pacesetter', style:'Lead by example', color:'#ec4899',
-    perk:'Permanent +5% pace · overtime pushes +25% instead of +15%',
+    perk:'Permanent +3% pace · overtime pushes +25% instead of +15%',
     flaw:'Overtime quality risk doubles · burnout events hit 50% harder',
     path:'Win on tempo. High risk, high speed, no brakes.' }
 ];
@@ -430,8 +430,13 @@ function simulateWeek(plan, progress, week, moraleFactor) {
     const r = plan.resources.find(x => x.id === t.res);
     const eff = Math.min(1, (r.availability || 100) / (demand[t.res] || 1));
     if (eff < 0.999 && !overloaded.includes(r.label)) overloaded.push(r.label);
-    progress[t.id] = (progress[t.id] || 0) + eff * moraleFactor;
-    weekCost += r.rate * 8 * 5 * (t.alloc / 100) * eff;
+    // v6.2 fix: clamp progress at task duration and prorate the final week's cost —
+    // previously teams paid a full week of labour even when a sliver of work remained
+    const step = eff * moraleFactor;
+    const need = Math.max(0, t.dur - (progress[t.id] || 0));
+    const frac = step > 0 ? Math.min(1, need / step) : 0;
+    progress[t.id] = (progress[t.id] || 0) + step * frac;
+    weekCost += r.rate * 8 * 5 * (t.alloc / 100) * eff * frac;
   }
   return { active, weekCost, overloaded };
 }
@@ -445,7 +450,7 @@ function pctComplete(plan, progress) {
 function isDoneT(T, id) { const t = T.plan.tasks.find(x => x.id === id); return !!t && !t.cut && (T.progress[id] || 0) >= t.dur - 0.01; }
 function allWorkDone(T) { return T.plan.tasks.every(t => t.cut || (T.progress[t.id] || 0) >= t.dur - 0.01); }
 function mfOf(T) { let m = Math.min(1.1, Math.max(0.7, 0.7 + 0.004 * T.morale)) * (T.crunchOn ? 1.25 : 1) * (T.tacticPace || 1);
-  if (ldr(T) === 'pacesetter') m *= 1.05;
+  if (ldr(T) === 'pacesetter') m *= 1.03;
   if (ldr(T) === 'coach' && T.week < 4) m *= 0.9;
   return m; }
 
@@ -575,7 +580,7 @@ const TACTICS = [
   { id:'teambuild', icon:'🍕', name:'Team building — $3K', desc:'Morale +8. A fed team is a fast team. Also repels this round\'s poachers.',
     fx(T){ T.spent += tacticCost(T, 3000); T.morale = Math.min(100, T.morale + (ldr(T) === 'commander' ? 4 : 8)); } },
   { id:'overtime', icon:'⏰', name:'Overtime push', desc:'+15% pace this round · morale −6 · 25% risk of quality −4.',
-    fx(T, g){ T.tacticPace = ldr(T) === 'pacesetter' ? 1.25 : 1.15; T.morale = Math.max(10, T.morale - (ldr(T) === 'commander' ? 3 : 6)); if (rand(g) < (ldr(T) === 'pacesetter' ? 0.5 : 0.25)) T.quality -= 4; } },
+    fx(T, g){ T.tacticPace = ldr(T) === 'pacesetter' ? 1.25 : 1.15; T.morale = Math.max(10, T.morale - (ldr(T) === 'commander' ? 3 : 6)); if (rand(g) < (ldr(T) === 'pacesetter' ? 0.5 : 0.25)) T.quality -= (ldr(T) === 'pacesetter' ? 6 : 4); } },
   { id:'quality', icon:'🔍', name:'Quality sweep — $4K', desc:'Quality +5. Fix it before UAT finds it.',
     fx(T){ T.spent += tacticCost(T, 4000); T.quality = Math.min(100, T.quality + 5); } },
   { id:'lunch', icon:'🥂', name:'Executive lunch — $2K', desc:'Sponsor +6. Relationships are requirements too.',
