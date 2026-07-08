@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PM League — Competitive Lifecycle Simulation (R&D)</title>
+<style>
+  :root { --ink:#1a1a2e; --mut:#5c636a; --line:#e2e8f0; --red:#ED1B2F; --blue:#6366f1; --purple:#7c3aed; --green:#10b981; --amber:#f59e0b; --bad:#ef4444; --bg:#f8f9fa; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+  header { background:#fff; border-bottom:1px solid var(--line); padding:10px 20px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; position:sticky; top:0; z-index:10; }
+  header h1 { font-size:1rem; margin:0; }
+  .rd-badge { background:rgba(237,27,47,.08); color:var(--red); font-size:.7rem; font-weight:700; padding:3px 10px; border-radius:12px; }
+  .stepper { display:flex; gap:4px; margin-left:auto; flex-wrap:wrap; }
+  .step { font-size:.72rem; font-weight:600; padding:5px 10px; border-radius:14px; background:#eef2f7; color:var(--mut); }
+  .step.on { background:var(--blue); color:#fff; } .step.done { background:#d1fae5; color:#065f46; }
+  main { max-width:1320px; margin:0 auto; padding:16px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:14px; }
+  .card h2 { margin:0 0 4px; font-size:1.1rem; } .card h3 { margin:14px 0 6px; font-size:.9rem; }
+  .sub { color:var(--mut); font-size:.83rem; margin:0 0 8px; line-height:1.5; }
+  table { width:100%; border-collapse:collapse; font-size:.8rem; }
+  th { text-align:left; color:#475569; background:#f1f5f9; padding:5px 7px; font-size:.72rem; }
+  td { padding:5px 7px; border-top:1px solid var(--line); vertical-align:middle; }
+  .btn { border:0; border-radius:8px; padding:9px 15px; font-weight:600; cursor:pointer; font-size:.85rem; }
+  .btn-p { background:var(--blue); color:#fff; } .btn-s { background:#fff; color:var(--ink); border:1px solid var(--line); } .btn-g { background:var(--green); color:#fff; }
+  .grid2 { display:grid; grid-template-columns:1.15fr 1fr; gap:14px; align-items:start; }
+  @media (max-width:980px){ .grid2 { grid-template-columns:1fr; } }
+  .kpis { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0; }
+  .kpi { flex:1; min-width:98px; background:#fff; border:1px solid var(--line); border-radius:10px; padding:7px 9px; text-align:center; }
+  .kpi b { display:block; font-size:1.08rem; } .kpi span { font-size:.64rem; color:var(--mut); text-transform:uppercase; letter-spacing:.03em; }
+  .ok { color:var(--green); } .warn { color:var(--amber); } .bad { color:var(--bad); }
+  .pill { display:inline-block; font-size:.64rem; font-weight:700; padding:2px 7px; border-radius:10px; }
+  .pill.hi { background:#fee2e2; color:#991b1b; } .pill.med { background:#fef3c7; color:#92400e; } .pill.lo { background:#d1fae5; color:#065f46; }
+  .pill.cut { background:#f1f5f9; color:#94a3b8; text-decoration:line-through; }
+  .charter dt { font-weight:700; font-size:.8rem; margin-top:10px; color:#334155; } .charter dd { margin:2px 0 0; font-size:.83rem; color:#475569; line-height:1.5; }
+  input[type=number] { width:54px; padding:3px 5px; border:1px solid var(--line); border-radius:6px; font-size:.78rem; }
+  select { padding:3px 5px; border:1px solid var(--line); border-radius:6px; font-size:.76rem; max-width:110px; }
+  .derived { background:#eef2ff; border:1px solid #c7d2fe; border-radius:10px; padding:10px 13px; font-size:.8rem; margin-top:10px; line-height:1.6; }
+  .derived b { color:#3730a3; }
+  .event-card { border-left:4px solid var(--amber); background:#fffbeb; border-radius:8px; padding:12px 14px; margin-bottom:12px; }
+  .opt { display:block; width:100%; text-align:left; margin:6px 0; padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; cursor:pointer; font-size:.82rem; }
+  .opt:hover { border-color:var(--blue); background:#f5f7ff; }
+  .opt small { color:var(--mut); display:block; margin-top:2px; }
+  .log { font-size:.76rem; color:#475569; max-height:150px; overflow:auto; }
+  .log div { padding:3px 0; border-bottom:1px dashed var(--line); }
+  .bar { height:6px; background:var(--line); border-radius:4px; overflow:hidden; } .bar i { display:block; height:6px; border-radius:4px; background:var(--blue); }
+  .ttype { font-size:.9rem; }
+  .flash { animation:fl 1s ease; } @keyframes fl { 0% { background:#fef9c3; } 100% { background:transparent; } }
+  .toast { position:fixed; bottom:16px; right:16px; background:var(--ink); color:#fff; padding:10px 15px; border-radius:8px; font-size:.83rem; opacity:0; transition:opacity .3s; z-index:60; }
+  .toast.on { opacity:1; }
+  .concept { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:10px 14px; font-size:.8rem; color:#166534; margin-bottom:12px; line-height:1.55; }
+  .tasktbl td:first-child { max-width:220px; }
+  /* ------- league / standings ------- */
+  .standings { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .team-chip { flex:1; min-width:170px; background:#fff; border:1px solid var(--line); border-left:5px solid var(--mut); border-radius:10px; padding:8px 11px; }
+  .team-chip .rank { font-size:1.15rem; font-weight:800; }
+  .team-chip .tname { font-weight:700; font-size:.82rem; }
+  .team-chip .tstat { font-size:.68rem; color:var(--mut); margin-top:3px; line-height:1.5; }
+  .team-chip.you { box-shadow:0 0 0 2px var(--blue); }
+  .mov { font-size:.72rem; font-weight:700; margin-left:4px; }
+  .rival-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin-top:10px; }
+  .rival { border:1px solid var(--line); border-radius:10px; padding:11px 13px; border-top:4px solid var(--mut); }
+  .rival b { font-size:.88rem; } .rival .tag { font-size:.68rem; color:var(--mut); text-transform:uppercase; letter-spacing:.04em; }
+  .rival p { font-size:.76rem; color:#475569; margin:6px 0 0; line-height:1.5; }
+  .scout { font-size:.72rem; margin-top:8px; background:#f8fafc; border-radius:8px; padding:7px 9px; line-height:1.7; }
+  .ticker { background:#0f172a; color:#cbd5e1; border-radius:10px; padding:10px 14px; font-size:.76rem; max-height:120px; overflow:auto; margin-bottom:14px; }
+  .ticker div { padding:2px 0; } .ticker b { color:#fff; }
+  .podium { display:flex; gap:12px; align-items:flex-end; justify-content:center; margin:18px 0; flex-wrap:wrap; }
+  .pod { text-align:center; border-radius:12px 12px 0 0; padding:14px 18px 10px; min-width:150px; color:#fff; }
+  .pod .medal { font-size:1.8rem; } .pod .score { font-size:1.5rem; font-weight:800; } .pod .pname { font-weight:700; font-size:.85rem; }
+</style>
+<script>
+(async () => {
+  document.documentElement.style.visibility = 'hidden';
+  try {
+    const tok = localStorage.getItem('bsim_token');
+    if (!tok) throw 0;
+    const r = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + tok } });
+    const d = await r.json();
+    if (!d.user || !d.user.is_admin) throw 0;
+    document.documentElement.style.visibility = '';
+  } catch (e) {
+    document.body.innerHTML = '<div style="font-family:sans-serif;padding:3rem;text-align:center;color:#5c636a"><h2>🔒 Not available</h2><p>This page requires an administrator session on this platform.</p><p><a href="/">Back to BizSim</a></p></div>';
+    document.documentElement.style.visibility = '';
+  }
+})();
+</script>
+</head>
+<body>
+<header>
+  <h1>🏆 PM League <span style="color:var(--mut);font-weight:400">— Enterprise Portal Modernization, competitive edition</span></h1>
+  <span class="rd-badge">R&D — SAME CHARTER, 5 TEAMS, 1 STANDING</span>
+  <div class="stepper" id="stepper"></div>
+</header>
+<main id="main"></main>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/*ENGINE-START*/
+/* =====================================================================
+   PM LEAGUE (compete.html) — competitive plan-vs-plan simulation.
+   Same charter & junior-PM first-pass plan as lifecycle.html (v2 engine).
+   FOUR AI rival teams each baselined their own fix of the same plan.
+   All teams run week-by-week in lockstep and face the SAME events;
+   each event is answered per team (player chooses, rivals follow their
+   personality). Standings = live projected final score; final scoring
+   is 1000 pts across Budget/Schedule/Delivery/Quality (BizSim-style).
+   v3 engine tweak: crashing a task below its original estimate charges
+   a crash premium (70% of the saved labour) on completion.
+   ===================================================================== */
+
+const CHARTER = {
+  projectName: 'Enterprise Portal Modernization',
+  sponsor: 'Sarah Chen — VP Digital Transformation',
+  problem: 'The current customer portal is 8 years old, built on deprecated technology. It cannot support mobile access, handles only 50 concurrent users, and requires 3x the maintenance cost of modern alternatives. Customer satisfaction scores have dropped 22% over 2 years, and the support team spends 40% of their time on portal-related issues.',
+  solution: 'Build a new cloud-native customer portal with responsive design, modern UX, real-time ERP integration, and self-service capabilities, on a microservices architecture (AWS).',
+  objectives: [
+    'Increase customer satisfaction from 62% to 85% within 6 months of launch',
+    'Support 500+ concurrent users with <2s response time (at go-live)',
+    'Reduce portal-related support tickets by 50% (3 months post-launch)',
+    'Enable mobile access for 100% of portal features (at go-live)'
+  ],
+  constraints: [
+    { type:'Budget', text:'Maximum project budget of $160,000 (labor + procurement)', impact:'High' },
+    { type:'Time', text:'Must launch before Q4 fiscal year-end (14 weeks from approval)', impact:'High' },
+    { type:'Resource', text:'Senior developer pool limited to 2 FTEs', impact:'Medium' },
+    { type:'Technical', text:'Must integrate with existing SAP ERP — no ERP replacement', impact:'High' },
+    { type:'Regulatory', text:'SOC 2 + accessibility (WCAG 2.1 AA) compliance', impact:'Medium' }
+  ],
+  highLevelRisks: [
+    { text:'ERP integration complexity may exceed estimates', level:'High', mit:'Early proof-of-concept sprint in week 6' },
+    { text:'Key developer attrition during project', level:'Medium', mit:'Cross-training and documentation protocol' },
+    { text:'Scope creep from stakeholder feature requests', level:'High', mit:'Formal change control with sponsor sign-off' },
+    { text:'Cloud infrastructure costs exceed projections', level:'Low', mit:'Reserved instances + cost monitoring' }
+  ],
+  successCriteria: [
+    'All Must Have requirements delivered and accepted by UAT team',
+    'Performance benchmarks met (500 users, <2s)',
+    'Zero critical/high security findings at pen test',
+    'User training completed for 100% of identified user groups',
+    'Project delivered within ±10% of approved budget'
+  ],
+  authority: 'Sponsor: budget & scope changes >$10K, timeline >1 week · PM: day-to-day, scope <$10K · Steering: GO/NO-GO at gates'
+};
+
+const firstPassPlan = () => ({
+  resources: [
+    { id:'r1', label:'Project Manager',            rate:125, availability:100 },
+    { id:'r2', label:'Marie Dupont (BA)',          rate:95,  availability:100 },
+    { id:'r3', label:'UX Designer',                rate:110, availability:80  },
+    { id:'r4', label:'Paul Tremblay (Sr Dev)',     rate:100, availability:100 },
+    { id:'r5', label:'QA Specialist',              rate:95,  availability:100 },
+    { id:'r6', label:'DevOps Engineer',            rate:130, availability:50  }
+  ],
+  tasks: [
+    { id:'t1', name:'Project Kickoff & Planning',        type:'scope', icon:'📦', start:1,  dur:2,  res:'r1', alloc:100, dep:null,  core:true },
+    { id:'t2', name:'Gather Requirements',               type:'scope', icon:'📦', start:3,  dur:3,  res:'r2', alloc:100, dep:'t1',  core:true },
+    { id:'t3', name:'UX Design & Wireframes',            type:'scope', icon:'📦', start:5,  dur:3,  res:'r3', alloc:100, dep:'t2',  core:true },
+    { id:'t4', name:'Backend Development',               type:'scope', icon:'📦', start:7,  dur:6,  res:'r4', alloc:100, dep:'t3',  core:true },
+    { id:'t5', name:'Frontend Development',              type:'scope', icon:'📦', start:9,  dur:5,  res:'r4', alloc:50,  dep:'t3',  core:true },
+    { id:'t6', name:'User Acceptance Testing',           type:'scope', icon:'📦', start:13, dur:3,  res:'r5', alloc:100, dep:'t4',  core:true },
+    { id:'t7', name:'Deployment & Go-Live',              type:'scope', icon:'📦', start:16, dur:2,  res:'r6', alloc:100, dep:'t6',  core:true },
+    { id:'qt1', name:'Requirements Review Session',      type:'quality', icon:'🔍', start:5,  dur:1, res:'r2', alloc:50,  dep:'t2' },
+    { id:'qt2', name:'Design Walkthrough with Users',    type:'quality', icon:'🔍', start:7,  dur:1, res:'r3', alloc:25,  dep:'t3' },
+    { id:'qt3', name:'Performance Load Testing',         type:'quality', icon:'🧪', start:12, dur:1, res:'r5', alloc:100, dep:'t4', crit:'perf' },
+    { id:'qt4', name:'Integration Test Execution',       type:'quality', icon:'🧪', start:11, dur:2, res:'r5', alloc:80,  dep:'t4' },
+    { id:'qt5', name:'Security Vulnerability Scan',      type:'quality', icon:'🧪', start:14, dur:1, res:'r6', alloc:50,  dep:'t6', crit:'sec' },
+    { id:'rt1', name:'ERP Integration PoC Sprint',       type:'risk', icon:'⚠️', start:6,  dur:2, res:'r4', alloc:50,  dep:'t2', crit:'erp' },
+    { id:'rt2', name:'Cross-Training Sessions',          type:'risk', icon:'⚠️', start:8,  dur:1, res:'r4', alloc:25,  dep:null, crit:'xtrain' },
+    { id:'ct1', name:'Steering Committee Prep & Meetings', type:'comm', icon:'💬', start:3, dur:14, res:'r1', alloc:10, dep:null },
+    { id:'ct2', name:'Go-Live Town Hall & Training',     type:'comm', icon:'💬', start:16, dur:1, res:'r2', alloc:50, dep:'t6', crit:'train' },
+    { id:'pt1', name:'Cloud Infrastructure Setup',       type:'proc', icon:'🛒', start:5,  dur:2, res:'r6', alloc:50, dep:'t2' },
+    { id:'pt2', name:'Security Pen Test Coordination',   type:'proc', icon:'🛒', start:14, dur:2, res:'r6', alloc:50, dep:'t6', crit:'pentest' }
+  ],
+  procItems: [
+    { id:'p1', item:'Cloud Hosting (AWS)', cost:12000, chargeOn:'pt1' },
+    { id:'p2', item:'UI Component Library License', cost:3500, chargeOn:'pt1' },
+    { id:'p3', item:'Security Penetration Testing', cost:15000, chargeOn:'pt2' }
+  ]
+});
+
+const ORIG_DUR = { t1:2,t2:3,t3:3,t4:6,t5:5,t6:3,t7:2,qt1:1,qt2:1,qt3:1,qt4:2,qt5:1,rt1:2,rt2:1,ct1:14,ct2:1,pt1:2,pt2:2,cr1:2 };
+const CRASH_FACTOR = 0.7;
+const TYPE_LABEL = { scope:'Scope', quality:'Quality', risk:'Risk response', comm:'Communication', proc:'Procurement' };
+const WEEKS_PER_ROUND = 3;
+
+// ------------------------- pure plan math (v2) -------------------------
+function taskCost(plan, t) {
+  const r = plan.resources.find(x => x.id === t.res);
+  return r ? r.rate * 8 * 5 * t.dur * (t.alloc / 100) : 0;
+}
+function planLabour(plan) { return plan.tasks.filter(t => !t.cut).reduce((a, t) => a + taskCost(plan, t), 0); }
+function planProc(plan) { return plan.procItems.filter(p => { const t = plan.tasks.find(x => x.id === p.chargeOn); return t && !t.cut; }).reduce((a, p) => a + p.cost, 0); }
+function planBudget(plan) { return planLabour(plan) + planProc(plan); }
+
+function overallocation(plan) {
+  const out = [];
+  const horizon = Math.max(...plan.tasks.filter(t => !t.cut).map(t => t.start + t.dur - 1), 1);
+  for (const r of plan.resources) {
+    for (let w = 1; w <= horizon; w++) {
+      const demand = plan.tasks.filter(t => !t.cut && t.res === r.id && w >= t.start && w < t.start + t.dur)
+        .reduce((a, t) => a + t.alloc, 0);
+      if (demand > r.availability + 0.01) out.push({ res:r.id, label:r.label, week:w, pct:demand });
+    }
+  }
+  return out;
+}
+
+function simulateWeek(plan, progress, week, moraleFactor) {
+  const depReady = id => { const t = plan.tasks.find(x => x.id === id); return !t || t.cut || (progress[id] || 0) >= t.dur * 0.6 - 0.01; };
+  const active = plan.tasks.filter(t => !t.cut && (progress[t.id] || 0) < t.dur - 0.001 && week >= t.start && (!t.dep || depReady(t.dep)));
+  const demand = {};
+  active.forEach(t => { demand[t.res] = (demand[t.res] || 0) + t.alloc; });
+  let weekCost = 0; const overloaded = [];
+  for (const t of active) {
+    const r = plan.resources.find(x => x.id === t.res);
+    const eff = Math.min(1, (r.availability || 100) / (demand[t.res] || 1));
+    if (eff < 0.999 && !overloaded.includes(r.label)) overloaded.push(r.label);
+    progress[t.id] = (progress[t.id] || 0) + eff * moraleFactor;
+    weekCost += r.rate * 8 * 5 * (t.alloc / 100) * eff;
+  }
+  return { active, weekCost, overloaded };
+}
+
+function pctComplete(plan, progress) {
+  const act = plan.tasks.filter(t => !t.cut);
+  const done = act.reduce((a, t) => a + Math.min(progress[t.id] || 0, t.dur), 0);
+  const tot = act.reduce((a, t) => a + t.dur, 0);
+  return tot ? done / tot : 0;
+}
+function isDoneT(T, id) { const t = T.plan.tasks.find(x => x.id === id); return !!t && !t.cut && (T.progress[id] || 0) >= t.dur - 0.01; }
+function allWorkDone(T) { return T.plan.tasks.every(t => t.cut || (T.progress[t.id] || 0) >= t.dur - 0.01); }
+function mfOf(T) { return Math.min(1.1, Math.max(0.7, 0.7 + 0.004 * T.morale)) * (T.crunchOn ? 1.25 : 1); }
+
+function forecastT(T, fromWeek) {
+  const p = JSON.parse(JSON.stringify(T.progress)); let w = fromWeek; let guard = 0;
+  const mf = Math.min(1.1, Math.max(0.7, 0.7 + 0.004 * T.morale));
+  const remaining = () => T.plan.tasks.filter(t => !t.cut && (p[t.id] || 0) < t.dur - 0.01).length;
+  while (remaining() > 0 && guard++ < 60) { w++; simulateWeek(T.plan, p, w, mf); }
+  return remaining() > 0 ? 99 : w;
+}
+
+function evmT(T) {
+  const b = T.baseline; if (!b) return null;
+  const BAC = b.budget;
+  let PV = 0, EV = 0;
+  for (const t of b.plan.tasks.filter(t => !t.cut)) {
+    const c = taskCost(b.plan, t);
+    PV += c * Math.max(0, Math.min(1, (T.week - t.start + 1) / t.dur));
+    const cur = T.plan.tasks.find(x => x.id === t.id);
+    const frac = cur && !cur.cut ? Math.min(1, (T.progress[t.id] || 0) / t.dur) : (T.progress[t.id] || 0) / t.dur;
+    EV += c * Math.min(1, frac);
+  }
+  const AC = T.spent;
+  return { BAC, PV, EV, AC, SPI: PV > 0 ? EV / PV : 1, CPI: AC > 0 ? EV / AC : 1, EAC: AC > 0 && EV > 0 ? BAC / (EV / AC) : BAC };
+}
+
+// ------------------------------- team -------------------------------
+function newTeam(id, name, icon, color, tag, plan, isPlayer) {
+  return { id, name, icon, color, tag, plan, isPlayer:!!isPlayer, baseline:null,
+    week:0, progress:{}, doneWeek:{}, spent:0, procCharged:{},
+    morale:75, quality:70, sponsorSat:70, crunchOn:false, crunched:0,
+    paulGone:false, contractor:false, erpBlown:false,
+    crLog:[], decisions:[], ended:false, terminated:false, goLive:null, endReason:'', lastRank:null };
+}
+function lockBaseline(T) {
+  T.baseline = { plan: JSON.parse(JSON.stringify(T.plan)), budget: planBudget(T.plan),
+    overalloc: overallocation(T.plan), forecastAtBaseline: forecastT(T, 0) };
+}
+function crT(T, week, text) { T.crLog.unshift({ week, text }); }
+
+function advanceTeamWeek(T, w) {
+  if (T.ended) return;
+  T.week = w;
+  const { weekCost, overloaded } = simulateWeek(T.plan, T.progress, w, mfOf(T));
+  T.spent += weekCost;
+  for (const t of T.plan.tasks) {
+    if (!t.cut && !T.doneWeek[t.id] && (T.progress[t.id] || 0) >= t.dur - 0.01) {
+      T.doneWeek[t.id] = w;
+      const od = ORIG_DUR[t.id];
+      if (od && t.dur < od) {
+        const r = T.plan.resources.find(x => x.id === t.res);
+        const prem = (od - t.dur) * r.rate * 40 * (t.alloc / 100) * CRASH_FACTOR;
+        T.spent += prem;
+        crT(T, w, 'Crash premium on "' + t.name + '": $' + (prem/1000).toFixed(1) + 'K (' + (od - t.dur) + ' wk below original estimate)');
+      }
+    }
+  }
+  if (overloaded.length) T.morale = Math.max(10, T.morale - 1.5 * overloaded.length);
+  for (const p of T.plan.procItems) {
+    const t = T.plan.tasks.find(x => x.id === p.chargeOn);
+    if (t && !t.cut && !T.procCharged[p.id] && w >= t.start && (T.progress[t.id] || 0) > 0) { T.procCharged[p.id] = true; T.spent += p.cost; }
+  }
+  for (const t of T.plan.tasks.filter(t => t.type === 'quality')) {
+    if (isDoneT(T, t.id) && !t._qCredited) { t._qCredited = true; T.quality = Math.min(100, T.quality + 3); }
+  }
+  if (allWorkDone(T)) { T.ended = true; T.goLive = T.doneWeek['t7'] || w; T.endReason = 'All planned work complete — go-live week ' + T.goLive + '.'; }
+  else if (w >= 20) { T.ended = true; T.terminated = true; T.endReason = 'Week 20: fiscal year closed six weeks ago — project terminated by steering committee.'; }
+  else if (T.spent > 240000) { T.ended = true; T.terminated = true; T.endReason = 'Spend passed $240K (150% of cap) — project terminated by finance.'; }
+}
+
+// ------------------------------- events -------------------------------
+function hasLive(T, id) { const t = T.plan.tasks.find(x => x.id === id); return t && !t.cut; }
+function pocRan(T) { return hasLive(T, 'rt1') && (T.progress['rt1'] || 0) > 0; }
+
+const EVENTS = [
+  { round:1, icon:'📈', title:'Sponsor feature request — "customer analytics dashboard"',
+    text: T => 'Sarah Chen returns from a leadership offsite wanting a customer analytics dashboard in the launch. Every team in the league received the same call. The charter gives her authority over scope changes >$10K — but the change control process is yours to run.',
+    options: [
+      { label:'Accept via change control: add "Analytics Dashboard" task (Dev, 2 wks, 100%)', hint:'Scope grows — replan around it. Sponsor +12, delivery value up.',
+        fx(T, w){ T.plan.tasks.push({ id:'cr1', name:'Analytics Dashboard (CR-1)', type:'scope', icon:'📦', start:Math.max(w+1,11), dur:2, res:'r4', alloc:100, dep:'t4' }); T.sponsorSat += 12; crT(T, w, 'CR-1 approved: Analytics Dashboard added to WBS'); } },
+      { label:'Negotiate: Phase 2, two weeks after go-live', hint:'Protects the plan; sponsor mildly disappointed (−5).',
+        fx(T){ T.sponsorSat -= 5; } },
+      { label:'Decline — cite the week-14 constraint she signed', hint:'Bold. Sponsor −14, morale +2.',
+        fx(T){ T.sponsorSat -= 14; T.morale += 2; } }
+    ] },
+  { round:2, icon:'🔌', title:'ERP integration is harder than estimated',
+    text: T => pocRan(T)
+      ? 'The SAP sandbox API returns undocumented data structures — exactly what the PoC sprint was designed to catch. Because the PoC ran, the team isolated the issue early. Impact: contained. (Same storm hit every team — those without a PoC are hurting.)'
+      : 'The SAP integration hits undocumented data structures in production APIs. The PoC sprint that would have caught this early ' + (hasLive(T, 'rt1') ? 'has not run yet' : 'was removed from the plan') + '. Backend estimates are now fiction. The same storm hit every team in the league.',
+    options: [
+      { label:'Absorb: extend Backend Development to fit reality', hint:'Backend +1 wk if your PoC ran, +3 wks if not.',
+        fx(T, w){ const t4 = T.plan.tasks.find(t => t.id === 't4'); const poc = pocRan(T); t4.dur += poc ? 1 : 3; if (!poc) { T.quality -= 6; T.erpBlown = true; } crT(T, w, 'Backend Development duration → ' + t4.dur + ' wks (ERP reality' + (poc ? ', PoC contained it' : ', no PoC') + ')'); } },
+      { label:'Bring in an integration contractor ($18K, external)', hint:'Duration protected; budget takes the hit.',
+        fx(T, w){ T.spent += 18000; T.contractor = true; if (!pocRan(T)) T.quality -= 3; crT(T, w, 'Integration contractor engaged: $18K'); } },
+      { label:'Descope real-time sync to nightly batch', hint:'Backend −1 wk, but the charter promise dies. Quality −8, sponsor −10.',
+        fx(T, w){ const t4 = T.plan.tasks.find(t => t.id === 't4'); t4.dur = Math.max(2, t4.dur - 1); T.quality -= 8; T.sponsorSat -= 10; crT(T, w, 'ERP integration descoped: real-time → nightly batch'); } }
+    ] },
+  { round:3, icon:'🚪', title:'Paul Tremblay hands in his notice',
+    text: T => { const over = T.baseline.overalloc.some(o => o.res === 'r4'); const xt = isDoneT(T, 'rt2');
+      return (over ? 'Weeks of overallocation caught up with him. ' : '') + 'Paul (senior developer, hired at a below-market $100/hr) accepted an offer elsewhere — recruiters called every team\'s Paul this week. ' + (xt ? 'Your cross-training sessions ran — his knowledge is documented and shared.' : (hasLive(T, 'rt2') ? 'Cross-training was planned but has not run yet.' : 'Cross-training was cut from the plan — his knowledge walks out with him.')); },
+    options: [
+      { label:'Backfill from the senior pool ($135/hr market rate)', hint:'Dev work continues at higher cost; +1 wk per dev task if no cross-training.',
+        fx(T, w){ const r4 = T.plan.resources.find(r => r.id === 'r4'); r4.rate = 135; r4.label = 'Sr Dev (backfill, $135/hr)'; T.paulGone = true; const xt = isDoneT(T, 'rt2'); if (!xt) { ['t4','t5','cr1'].forEach(id => { const t = T.plan.tasks.find(x => x.id === id); if (t && !t.cut && (T.progress[id] || 0) < t.dur) t.dur += 1; }); crT(T, w, 'Dev tasks +1 wk each (knowledge loss — no cross-training)'); } crT(T, w, 'Resource r4: Paul → senior pool backfill, $100 → $135/hr'); } },
+      { label:'Counter-offer to keep Paul (+$15/hr and a retention bonus $8K)', hint:'Cheaper than backfill — he stays. Morale +4.',
+        fx(T, w){ const r4 = T.plan.resources.find(r => r.id === 'r4'); r4.rate = 115; T.spent += 8000; T.morale += 4; crT(T, w, 'Paul retained: $100 → $115/hr + $8K bonus'); } },
+      { label:'Spread his work across the team (no backfill)', hint:'No new cost — dev tasks +1-2 wks, morale −10, quality −4.',
+        fx(T, w){ const xt = isDoneT(T, 'rt2'); ['t4','t5','cr1'].forEach(id => { const t = T.plan.tasks.find(x => x.id === id); if (t && !t.cut && (T.progress[id] || 0) < t.dur) t.dur += (xt ? 1 : 2); }); T.morale -= 10; T.quality -= 4; crT(T, w, 'Dev tasks redistributed (+' + (xt ? 1 : 2) + ' wk each), no backfill'); } }
+    ] },
+  { round:4, icon:'🏁', title:'Steering committee — fiscal year-end is week 14',
+    text: T => 'GO/NO-GO checkpoint for the whole league. Your live forecast says go-live ≈ week ' + forecastT(T, T.week) + '. The steering committee reminds every team that fiscal year-end (week 14) is contractual for the cloud budget.',
+    options: [
+      { label:'Crunch the final stretch (+25% pace)', hint:'Morale −15, quality −5. The oldest trade in the book.',
+        fx(T, w){ T.crunchOn = true; T.crunched++; T.morale -= 15; T.quality -= 5; crT(T, w, 'Crunch authorized for final stretch'); } },
+      { label:'Hold the plan and present the forecast with variance analysis', hint:'If your maths says ≤14, this is the professional answer (+10 sponsor). If not: −12.',
+        fx(T){ const f = forecastT(T, T.week); T.sponsorSat += (f <= 14 ? 10 : -12); } },
+      { label:'Cut every remaining non-core task to guarantee the date', hint:'Quality/risk/comm tasks not yet done are removed. Consequences at closing.',
+        fx(T, w){ T.plan.tasks.forEach(t => { if (!t.core && !t.cut && (T.progress[t.id] || 0) < t.dur) { t.cut = true; crT(T, w, 'Cut: ' + t.name + ' (date protection)'); } }); T.quality -= 6; } }
+    ] }
+];
+
+// ------------------------------ archetypes ------------------------------
+const ARCHETYPES = [
+  { id:'velocity', name:'Team Velocity', icon:'⚡', color:'#f59e0b', tag:'Aggressive fast-tracker',
+    blurb:'Compress the critical path, overlap everything, worry later. Reads a Gantt chart like a drag strip. Cut the PoC — "no time".',
+    build(){ const p = firstPassPlan(); const g = id => p.tasks.find(t => t.id === id);
+      p.resources.find(r => r.id === 'r6').availability = 100;
+      g('t3').dur = 2; g('t4').start = 6; g('t4').dur = 5;
+      g('t5').start = 9; g('t5').alloc = 80;
+      g('t6').start = 11; g('t6').dur = 2;
+      g('t7').start = 13;
+      g('qt2').cut = true; g('qt4').cut = true; g('rt2').cut = true; g('rt1').cut = true;
+      g('qt3').start = 11; g('qt5').start = 13; g('pt2').start = 13; g('ct2').start = 13;
+      return p; },
+    choose: { 1:0, 2:1, 3:0, 4:0 } },
+  { id:'granite', name:'Granite Partners', icon:'🗿', color:'#64748b', tag:'Conservative padder',
+    blurb:'Pads every estimate, keeps every safeguard, never met a buffer it didn\'t like. Quality is non-negotiable; deadlines are aspirational.',
+    build(){ const p = firstPassPlan(); const g = id => p.tasks.find(t => t.id === id);
+      g('t2').dur = 4; g('qt1').start = 7;
+      g('t3').start = 6; g('t3').dur = 4; g('t3').alloc = 80;
+      g('qt2').start = 11;
+      g('rt1').start = 6; g('rt2').start = 8;
+      g('t4').start = 9; g('t4').dur = 6;
+      g('t5').start = 16; g('t5').dur = 4;
+      g('qt4').start = 14; g('qt4').res = 'r2';
+      g('qt3').start = 14;
+      g('t6').start = 16;
+      g('t7').start = 18; g('t7').alloc = 50;
+      g('qt5').start = 19; g('qt5').res = 'r5';
+      g('pt2').start = 18; g('pt2').res = 'r1';
+      g('ct2').start = 19;
+      return p; },
+    choose: { 1:1, 2:0, 3:1, 4:1 } },
+  { id:'corners', name:'CutCorner Labs', icon:'✂️', color:'#ef4444', tag:'Cheap & cheerful gambler',
+    blurb:'Strips every "optional" line from the budget: no PoC, no pen test, no load test, cheapest hands on every task. What could possibly go wrong?',
+    build(){ const p = firstPassPlan(); const g = id => p.tasks.find(t => t.id === id);
+      ['rt1','rt2','qt1','qt2','qt3','qt5','pt2'].forEach(id => g(id).cut = true);
+      g('t3').res = 'r2'; g('t3').start = 6;
+      g('t4').start = 8;
+      g('qt4').start = 13;
+      g('t5').start = 13; g('t5').dur = 4; g('t5').alloc = 40;
+      g('t6').start = 15; g('t6').dur = 2;
+      g('t7').start = 17; g('t7').alloc = 50;
+      g('ct2').start = 17; g('ct1').alloc = 5;
+      return p; },
+    choose: { 1:2, 2:2, 3:0, 4:2 } },
+  { id:'meridian', name:'Meridian Group', icon:'🧭', color:'#10b981', tag:'Balanced professional',
+    blurb:'Found the junior PM\'s flaws in review, fixed them before baseline, kept the safeguards, negotiated DevOps up to full availability. Boringly competent — beat them if you can.',
+    build(){ const p = firstPassPlan(); const g = id => p.tasks.find(t => t.id === id);
+      p.resources.find(r => r.id === 'r6').availability = 100;
+      g('qt1').start = 6;
+      g('t3').alloc = 80;
+      g('rt1').start = 5; g('rt2').start = 6;
+      g('t4').start = 7;
+      g('qt4').start = 12; g('qt3').start = 16;
+      g('t5').start = 14;
+      g('t6').start = 14; g('t6').dur = 2;
+      g('t7').start = 16; g('t7').dur = 1;
+      g('qt2').cut = true;
+      g('qt5').start = 17;
+      g('pt2').start = 17; g('ct2').start = 16;
+      return p; },
+    choose: { 1:1, 2:0, 3:1, 4:1 } }
+];
+
+// ------------------------------ scoring ------------------------------
+function finalScore(T) {
+  const cap = 160000;
+  const budget = T.spent <= cap ? 250 : Math.max(0, Math.round(250 - (T.spent - cap) / cap * 1000));
+  const schedule = T.goLive ? (T.goLive <= 14 ? 250 : Math.max(0, 250 - (T.goLive - 14) * 35)) : 0;
+  const scopeTasks = T.plan.tasks.filter(t => t.type === 'scope');
+  const totVal = scopeTasks.reduce((a, t) => a + (ORIG_DUR[t.id] || t.dur), 0);
+  const gotVal = scopeTasks.filter(t => !t.cut && isDoneT(T, t.id)).reduce((a, t) => a + (ORIG_DUR[t.id] || t.dur), 0);
+  // launch-gap penalties: shipping without load test / security verification bites AT go-live
+  const perfGap = T.goLive && !isDoneT(T, 'qt3') ? 40 : 0;   // launch-day performance incident
+  const secGap = T.goLive && !(isDoneT(T, 'qt5') && isDoneT(T, 'pt2')) ? 60 : 0; // security findings post-launch
+  const delivery = Math.max(0, Math.min(250, Math.round(gotVal / totVal * 170) + (isDoneT(T, 't6') ? 40 : 0) + (isDoneT(T, 'ct2') ? 40 : 0)) - perfGap);
+  const quality = Math.max(0, Math.min(250, Math.round(Math.max(0, T.quality) * 1.7) + (isDoneT(T, 'qt5') ? 25 : 0) + (isDoneT(T, 'pt2') ? 25 : 0) + (isDoneT(T, 'qt3') ? 30 : 0)) - secGap);
+  const total = budget + schedule + delivery + quality;
+  const grade = total >= 850 ? 'S' : total >= 750 ? 'A' : total >= 650 ? 'B' : total >= 550 ? 'C' : total >= 450 ? 'D' : 'F';
+  return { budget, schedule, delivery, quality, total, grade };
+}
+function criteriaOf(T) {
+  const scopeDone = T.plan.tasks.filter(t => t.type === 'scope' && !t.cut).every(t => isDoneT(T, t.id));
+  return [
+    { name:'All Must-Have requirements delivered (scope complete + UAT)', ok: scopeDone && isDoneT(T, 't6') },
+    { name:'Performance benchmarks met (load testing ran)', ok: isDoneT(T, 'qt3') && T.quality >= 65 },
+    { name:'Zero critical security findings (scan + pen test ran)', ok: isDoneT(T, 'qt5') && isDoneT(T, 'pt2') },
+    { name:'User training completed', ok: isDoneT(T, 'ct2') },
+    { name:'Delivered within ±10% of baseline budget', ok: T.baseline ? T.spent <= T.baseline.budget * 1.1 : false },
+    { name:'Charter constraint: go-live ≤ week 14', ok: !!T.goLive && T.goLive <= 14 }
+  ];
+}
+function projectScore(T) {
+  if (T.ended) return finalScore(T);
+  const C = JSON.parse(JSON.stringify(T));
+  let w = C.week, guard = 0;
+  while (!C.ended && guard++ < 30) { w++; advanceTeamWeek(C, w); }
+  return finalScore(C);
+}
+
+// ------------------------------ league state ------------------------------
+function makeLeague() {
+  const player = newTeam('you', 'Your Team', '🎓', '#6366f1', 'Human PM', firstPassPlan(), true);
+  const rivals = ARCHETYPES.map(a => { const T = newTeam(a.id, a.name, a.icon, a.color, a.tag, a.build(), false); lockBaseline(T); return T; });
+  return { phase:'initiation', week:0, round:0, teams:[player, ...rivals], player, rivals,
+    pendingEvent:null, eventResolved:true, news:[], statusHistory:[] };
+}
+
+function applyAIEvent(G, ev) {
+  for (const T of G.rivals) {
+    if (T.ended) continue;
+    const a = ARCHETYPES.find(x => x.id === T.id);
+    let idx = a.choose[ev.round];
+    ev.options[idx].fx(T, G.week);
+    T.decisions.push({ round:ev.round, label:ev.options[idx].label });
+    G.news.unshift({ week:G.week, icon:T.icon, team:T.name, text:ev.options[idx].label });
+  }
+}
+
+function leagueRound(G, playerDecisionApplied) {
+  G.round++;
+  for (let i = 0; i < WEEKS_PER_ROUND; i++) {
+    if (G.teams.every(t => t.ended)) break;
+    G.week++;
+    for (const T of G.teams) advanceTeamWeek(T, G.week);
+  }
+  // snapshot ranks
+  const ranked = [...G.teams].sort((a, b) => projectScore(b).total - projectScore(a).total);
+  ranked.forEach((T, i) => { T.prevRank = T.lastRank; T.lastRank = i + 1; });
+  const ev = EVENTS.find(e => e.round === G.round);
+  if (ev && !G.player.ended) { G.pendingEvent = ev; G.eventResolved = false; applyAIEvent(G, ev); }
+  else { G.pendingEvent = null; G.eventResolved = true; if (ev) applyAIEvent(G, ev); }
+  // once the player is done, fast-forward rivals to their own endings
+  if (G.player.ended) {
+    let w = G.week, guard = 0;
+    while (G.rivals.some(T => !T.ended) && guard++ < 30) { w++; for (const T of G.rivals) advanceTeamWeek(T, w); }
+    G.week = Math.max(G.week, w);
+    G.phase = 'closing';
+  }
+}
+/*ENGINE-END*/
+
+// ==================================================================== UI
+const G = makeLeague();
+const S = G; // alias
+
+function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2400); }
+
+// ---------- plan editor (player team) ----------
+function planEditorHTML(exec) {
+  const T = G.player, p = T.plan;
+  const resOpts = sel => p.resources.map(r => `<option value="${r.id}" ${r.id===sel?'selected':''}>${r.label.split('(')[0].trim()}</option>`).join('');
+  const rows = p.tasks.map((t, i) => {
+    const done = Math.min(T.progress[t.id] || 0, t.dur);
+    const pct = Math.round(done / t.dur * 100);
+    const finished = pct >= 100;
+    const lock = exec && finished;
+    return `<tr style="${t.cut ? 'opacity:.45' : ''}">
+      <td><span class="ttype" title="${TYPE_LABEL[t.type]}">${t.icon}</span> ${t.name} ${t.cut ? '<span class="pill cut">CUT</span>' : ''}</td>
+      <td>${lock || t.cut ? t.start : `<input type="number" min="${exec ? G.week + 1 : 1}" max="20" value="${t.start}" onchange="editTask(${i},'start',this.value)">`}</td>
+      <td>${lock || t.cut ? t.dur : `<input type="number" min="1" max="12" value="${t.dur}" onchange="editTask(${i},'dur',this.value)">`}</td>
+      <td>${lock || t.cut ? p.resources.find(r=>r.id===t.res).label.split('(')[0].trim() : `<select onchange="editTask(${i},'res',this.value)">${resOpts(t.res)}</select>`}</td>
+      <td>${lock || t.cut ? t.alloc + '%' : `<input type="number" min="10" max="100" step="5" value="${t.alloc}" onchange="editTask(${i},'alloc',this.value)">%`}</td>
+      <td>$${Math.round(taskCost(p, t)/1000)}K</td>
+      ${exec ? `<td>${finished ? '✅' : pct + '%'}</td>` : ''}
+      <td>${t.core || finished ? '' : `<button class="btn btn-s" style="padding:2px 8px;font-size:.7rem" onclick="editTask(${i},'cut',${!t.cut})">${t.cut ? 'Restore' : 'Cut'}</button>`}</td>
+    </tr>`;
+  }).join('');
+  const resRows = p.resources.map((r, i) => `<tr>
+    <td>${r.label}</td><td>$${r.rate}/hr</td>
+    <td><input type="number" min="10" max="100" step="10" value="${r.availability}" onchange="editResource(${i},this.value)">% </td>
+  </tr>`).join('');
+  return `
+    <table class="tasktbl"><tr><th>Task</th><th>Start</th><th>Wks</th><th>Resource</th><th>Alloc</th><th>Cost</th>${exec ? '<th>Done</th>' : ''}<th></th></tr>${rows}</table>
+    <h3>👥 Resources (negotiate availability with functional managers)</h3>
+    <table><tr><th>Resource</th><th>Rate</th><th>Availability</th></tr>${resRows}</table>
+    <p class="sub" style="margin-top:6px">📦 scope · 🔍/🧪 quality · ⚠️ risk response · 💬 communication · 🛒 procurement. ⚠️ Crashing a task below its original estimate charges a 70% crash premium on completion.</p>
+    <div class="derived" id="derived">${derivedHTML()}</div>`;
+}
+function derivedHTML() {
+  const T = G.player, p = T.plan;
+  const budget = planBudget(p);
+  const over = overallocation(p).filter(o => o.week > G.week);
+  const overTxt = over.length
+    ? `<span class="bad">⚠️ Overallocated: ${[...new Set(over.map(o => o.label.split('(')[0] + ' wk' + o.week + ' (' + Math.round(o.pct) + '%)'))].slice(0, 4).join(' · ')}${over.length > 4 ? ' +' + (over.length - 4) + ' more' : ''}</span>`
+    : '<span class="ok">✅ No resource overallocation ahead</span>';
+  const fin = forecastT(T, G.week);
+  const spentTxt = T.baseline ? ` · Spent so far <b>$${Math.round(T.spent/1000)}K</b>` : '';
+  const proj = T.baseline ? ` · Projected league score <b>${projectScore(T).total}</b>` : '';
+  return `<b>⚙️ Derived simulation variables</b> — recomputed from this plan:<br>
+    Forecast go-live ≈ <b>week ${fin}</b> <span class="${fin <= 14 ? 'ok' : 'bad'}">(charter cap: 14)</span> ·
+    Planned cost <b>$${Math.round(budget/1000)}K</b> <span class="${budget <= 160000 ? 'ok' : 'bad'}">(cap $160K)</span>${spentTxt}${proj}<br>${overTxt}`;
+}
+window.editResource = (i, v) => {
+  const T = G.player, r = T.plan.resources[i]; const before = r.availability;
+  r.availability = +v;
+  if (G.phase === 'execution') crT(T, G.week, `Resource "${r.label}" availability: ${before}% → ${r.availability}%`);
+  refreshDerived();
+};
+window.editTask = (i, k, v) => {
+  const T = G.player, t = T.plan.tasks[i]; const before = k === 'cut' ? (t.cut ? 'cut' : 'active') : t[k];
+  t[k] = (k === 'res') ? v : (k === 'cut' ? v : +v);
+  if (G.phase === 'execution') crT(T, G.week, `"${t.name}" ${k}: ${before} → ${k === 'cut' ? (v ? 'cut' : 'active') : t[k]}`);
+  refreshDerived(); if (k === 'cut') render();
+};
+function refreshDerived() {
+  const el = document.getElementById('derived');
+  if (el) { el.innerHTML = derivedHTML(); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+}
+
+// ---------- standings ----------
+function standingsHTML(final) {
+  const scored = G.teams.map(T => ({ T, s: final ? finalScore(T) : projectScore(T) })).sort((a, b) => b.s.total - a.s.total);
+  return `<div class="standings">` + scored.map((x, i) => {
+    const { T, s } = x;
+    const mov = T.prevRank ? (T.prevRank > i + 1 ? `<span class="mov ok">▲${T.prevRank - i - 1}</span>` : T.prevRank < i + 1 ? `<span class="mov bad">▼${i + 1 - T.prevRank}</span>` : `<span class="mov" style="color:var(--mut)">—</span>`) : '';
+    const st = T.ended ? (T.terminated ? '<span class="bad">terminated</span>' : 'go-live wk ' + T.goLive) : '~wk ' + forecastT(T, G.week);
+    return `<div class="team-chip ${T.isPlayer ? 'you' : ''}" style="border-left-color:${T.color}">
+      <span class="rank">#${i + 1}</span>${mov} <span class="tname">${T.icon} ${T.name}</span>
+      <div class="tstat">${final ? '' : 'proj. '}<b>${s.total}</b> pts (${s.grade}) · ${st}<br>$${Math.round(T.spent/1000)}K · Q${Math.round(T.quality)} · 😊${Math.round(T.morale)}</div>
+    </div>`;
+  }).join('') + `</div>`;
+}
+function tickerHTML() {
+  if (!G.news.length) return '';
+  return `<div class="ticker">${G.news.slice(0, 12).map(n => `<div>📡 Wk ${n.week} — <b>${n.icon} ${n.team}</b>: ${n.text}</div>`).join('')}</div>`;
+}
+
+// ---------- M&C (player) ----------
+function mcHTML() {
+  const T = G.player;
+  if (!T.baseline) return '';
+  const e = evmT(T);
+  const rows = G.statusHistory.map(h => `<tr>
+    <td>Wk ${h.week}</td><td>${h.pct}%</td>
+    <td class="${h.spi>=0.95?'ok':h.spi>=0.8?'warn':'bad'}">${h.spi.toFixed(2)}</td>
+    <td class="${h.cpi>=0.95?'ok':h.cpi>=0.8?'warn':'bad'}">${h.cpi.toFixed(2)}</td>
+    <td>$${Math.round(h.spent/1000)}K</td><td>${Math.round(h.morale)}%</td><td>${Math.round(h.quality)}</td><td>#${h.rank}</td></tr>`).join('');
+  return `
+    <div class="kpis">
+      <div class="kpi"><b class="${e.SPI>=0.95?'ok':e.SPI>=0.8?'warn':'bad'}">${e.SPI.toFixed(2)}</b><span>SPI</span></div>
+      <div class="kpi"><b class="${e.CPI>=0.95?'ok':e.CPI>=0.8?'warn':'bad'}">${e.CPI.toFixed(2)}</b><span>CPI</span></div>
+      <div class="kpi"><b>$${Math.round(e.AC/1000)}K</b><span>Actual cost</span></div>
+      <div class="kpi"><b class="${e.EAC<=176000?'ok':'bad'}">$${Math.round(e.EAC/1000)}K</b><span>EAC</span></div>
+      <div class="kpi"><b class="${T.morale>=50?'ok':'bad'}">${Math.round(T.morale)}%</b><span>Morale</span></div>
+      <div class="kpi"><b class="${T.quality>=70?'ok':'bad'}">${Math.round(T.quality)}</b><span>Quality</span></div>
+      <div class="kpi"><b>${Math.round(T.sponsorSat)}%</b><span>Sponsor</span></div>
+    </div>
+    <h3>Status history</h3>
+    <table><tr><th>Date</th><th>% done</th><th>SPI</th><th>CPI</th><th>Spent</th><th>Morale</th><th>Quality</th><th>Rank</th></tr>${rows || '<tr><td colspan="8" class="sub">No status yet.</td></tr>'}</table>`;
+}
+
+// ---------- views ----------
+function render() {
+  const steps = ['initiation','planning','execution','closing'];
+  const labels = { initiation:'1 · Briefing', planning:'2 · Planning', execution:'3 · Race', closing:'4 · Standings' };
+  document.getElementById('stepper').innerHTML = steps.map(s =>
+    `<span class="step ${s===G.phase?'on':steps.indexOf(s)<steps.indexOf(G.phase)?'done':''}">${labels[s]}</span>`).join('');
+  const m = document.getElementById('main');
+  m.innerHTML = G.phase === 'initiation' ? viewInitiation() : G.phase === 'planning' ? viewPlanning() : G.phase === 'execution' ? viewExecution() : viewClosing();
+  window.scrollTo(0, 0);
+}
+
+function rivalCards(scout) {
+  return `<div class="rival-grid">` + G.rivals.map(T => {
+    const a = ARCHETYPES.find(x => x.id === T.id);
+    const sc = scout ? `<div class="scout">📋 <b>Scouting report</b><br>Baseline budget: <b>$${Math.round(T.baseline.budget/1000)}K</b> ${T.baseline.budget<=160000?'<span class="ok">✓</span>':'<span class="bad">over cap</span>'}<br>Forecast go-live: <b>wk ${T.baseline.forecastAtBaseline}</b> ${T.baseline.forecastAtBaseline<=14?'<span class="ok">✓</span>':'<span class="bad">late</span>'}<br>Overallocation: ${T.baseline.overalloc.length? '<span class="bad">' + T.baseline.overalloc.length + ' wk-slots</span>' : '<span class="ok">none</span>'} · Cut tasks: ${T.plan.tasks.filter(t=>t.cut).length}</div>` : '';
+    return `<div class="rival" style="border-top-color:${T.color}"><b>${T.icon} ${T.name}</b> <div class="tag">${T.tag}</div><p>${a.blurb}</p>${sc}</div>`;
+  }).join('') + `</div>`;
+}
+
+function viewInitiation() {
+  return `
+  <div class="concept">🏆 <b>PM League:</b> five teams — you and four AI rivals — received the <b>same charter</b> and the same junior PM's first-pass plan. Each rival has already reviewed the plan its own way and locked a baseline. All projects run week-by-week in parallel and face the <b>same events</b>. Standings update every round on projected final score (1000 pts: Budget · Schedule · Delivery · Quality). Beat the field.</div>
+  <div class="card">
+    <h2>📜 Project Charter — ${CHARTER.projectName}</h2>
+    <p class="sub">Sponsor: ${CHARTER.sponsor}</p>
+    <dl class="charter">
+      <dt>Problem</dt><dd>${CHARTER.problem}</dd>
+      <dt>Proposed solution</dt><dd>${CHARTER.solution}</dd>
+      <dt>Objectives</dt><dd>${CHARTER.objectives.map(o => '• ' + o).join('<br>')}</dd>
+      <dt>Constraints</dt><dd>${CHARTER.constraints.map(c => `<span class="pill ${c.impact==='High'?'hi':c.impact==='Medium'?'med':'lo'}">${c.type}</span> ${c.text}`).join('<br>')}</dd>
+      <dt>High-level risks</dt><dd>${CHARTER.highLevelRisks.map(r => `<span class="pill ${r.level==='High'?'hi':r.level==='Medium'?'med':'lo'}">${r.level}</span> ${r.text} — <i>${r.mit}</i>`).join('<br>')}</dd>
+      <dt>Success criteria</dt><dd>${CHARTER.successCriteria.map(c => '• ' + c).join('<br>')}</dd>
+      <dt>Authority</dt><dd>${CHARTER.authority}</dd>
+    </dl>
+  </div>
+  <div class="card">
+    <h2>🥊 Meet the competition</h2>
+    <p class="sub">Four rival teams, same charter, four philosophies. Their baselines are locked — scouting reports unlock in Planning.</p>
+    ${rivalCards(false)}
+    <div style="margin-top:14px"><button class="btn btn-g" onclick="G.phase='planning';render()">✅ Accept charter → Planning</button></div>
+  </div>`;
+}
+
+function viewPlanning() {
+  return `
+  <div class="card">
+    <h2>📐 Planning — fix the junior PM's plan, then enter the race</h2>
+    <p class="sub">Same first-pass plan the rivals received. Review it against the charter — <b>whatever you baseline is what races</b>. The scouting reports below show what the competition committed to.</p>
+    ${planEditorHTML(false)}
+    <div style="margin-top:14px; display:flex; gap:10px;">
+      <button class="btn btn-p" onclick="setBaseline()">🔒 Lock baseline → Start the race</button>
+      <button class="btn btn-s" onclick="G.player.plan=firstPassPlan();render()">Reset to first-pass plan</button>
+    </div>
+  </div>
+  <div class="card"><h2>🔭 Scouting reports</h2>${rivalCards(true)}</div>`;
+}
+
+window.setBaseline = () => {
+  lockBaseline(G.player);
+  G.phase = 'execution'; G.pendingEvent = null; G.eventResolved = true;
+  render(); toast('Baseline locked. Five teams, one standing — good luck.');
+};
+
+function snapshotPlayer() {
+  const T = G.player, e = evmT(T);
+  const rank = [...G.teams].sort((a, b) => projectScore(b).total - projectScore(a).total).findIndex(x => x.isPlayer) + 1;
+  G.statusHistory.push({ week:G.week, pct:Math.round(pctComplete(T.plan, T.progress) * 100), spi:e.SPI, cpi:e.CPI, spent:e.AC, morale:T.morale, quality:T.quality, rank });
+}
+
+window.runLeagueRound = () => {
+  leagueRound(G);
+  if (G.phase !== 'closing') snapshotPlayer();
+  render();
+};
+
+window.decide = (i) => {
+  const ev = G.pendingEvent; if (!ev) return;
+  ev.options[i].fx(G.player, G.week); G.eventResolved = true;
+  G.player.decisions.push({ round:ev.round, label:ev.options[i].label });
+  render(); toast('Decision recorded — replan if needed, then run the round.');
+};
+
+function viewExecution() {
+  const T = G.player, ev = G.pendingEvent;
+  const eventBlock = ev && !G.eventResolved ? `
+    <div class="event-card"><b>${ev.icon} ${ev.title}</b>
+      <p style="margin:6px 0" class="sub">${ev.text(T)}</p>
+      ${ev.options.map((o, i) => `<button class="opt" onclick="decide(${i})"><b>${o.label}</b><small>${o.hint}</small></button>`).join('')}
+    </div>` : '';
+  const advance = T.ended
+    ? `<p class="sub">Your project has ended: ${T.endReason}</p><button class="btn btn-p" onclick="runLeagueRound()">🏁 See final standings</button>`
+    : (!ev || G.eventResolved)
+      ? `<button class="btn btn-p" onclick="runLeagueRound()">▶️ Run weeks ${G.week + 1}–${G.week + WEEKS_PER_ROUND} (all teams)</button>
+         <p class="sub" style="margin-top:6px">Adjust the plan first if needed — every edit after baseline is a logged change request and re-derives the engine.</p>`
+      : `<p class="sub">⚠️ Resolve the event first (the rivals already have — see the wire).</p>`;
+  return `
+  ${standingsHTML(false)}
+  ${tickerHTML()}
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <h2>🚀 Week ${G.week} · ${Math.round(pctComplete(T.plan, T.progress) * 100)}% complete</h2>
+        <div class="bar" style="margin:8px 0 12px"><i style="width:${Math.round(pctComplete(T.plan, T.progress) * 100)}%"></i></div>
+        ${eventBlock}${advance}
+      </div>
+      <div class="card"><h2>📊 Monitor & Control</h2>${mcHTML()}</div>
+      <div class="card">
+        <h3 style="margin-top:0">📋 Change requests (${T.crLog.length})</h3>
+        <div class="log">${T.crLog.map(c => `<div>Wk ${c.week} — ${c.text}</div>`).join('') || '<span class="sub">None — baseline untouched.</span>'}</div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📐 Living project plan</h2>
+      <p class="sub">Task-level control: start week, duration, resource, allocation, cut/restore. Finished tasks lock.</p>
+      ${planEditorHTML(true)}
+    </div>
+  </div>`;
+}
+
+function viewClosing() {
+  const scored = G.teams.map(T => ({ T, s: finalScore(T) })).sort((a, b) => b.s.total - a.s.total);
+  const podium = scored.slice(0, 3);
+  const medals = ['🥇', '🥈', '🥉'];
+  const heights = [130, 105, 85];
+  const podHTML = `<div class="podium">${[1, 0, 2].filter(i => podium[i]).map(i => `
+    <div class="pod" style="background:${podium[i].T.color}; padding-top:${144 - heights[i]}px; min-height:${heights[i]}px">
+      <div class="medal">${medals[i]}</div><div class="pname">${podium[i].T.icon} ${podium[i].T.name}${podium[i].T.isPlayer ? ' (YOU)' : ''}</div>
+      <div class="score">${podium[i].s.total}</div><div style="font-size:.7rem">grade ${podium[i].s.grade}</div>
+    </div>`).join('')}</div>`;
+  const rows = scored.map((x, i) => {
+    const { T, s } = x;
+    const crit = criteriaOf(T).filter(c => c.ok).length;
+    return `<tr style="${T.isPlayer ? 'background:#f5f7ff;font-weight:600' : ''}">
+      <td>#${i + 1}</td><td>${T.icon} ${T.name}${T.isPlayer ? ' ← you' : ''}</td>
+      <td><b>${s.total}</b> (${s.grade})</td><td>${s.budget}</td><td>${s.schedule}</td><td>${s.delivery}</td><td>${s.quality}</td>
+      <td>${T.goLive ? 'wk ' + T.goLive : '<span class="bad">✗</span>'}</td><td>$${Math.round(T.spent/1000)}K</td><td>${crit}/6</td></tr>`;
+  }).join('');
+  const T = G.player, b = T.baseline, e = evmT(T);
+  const playerRank = scored.findIndex(x => x.T.isPlayer) + 1;
+  const insights = [
+    playerRank === 1 ? '🏆 <b>League:</b> you beat the field — including Meridian Group\'s "fixed" plan. Check the table: where did each rival bleed points?'
+      : '🔍 <b>League:</b> you finished #' + playerRank + '. Compare your dimension scores against ' + scored[0].T.name + ' — the gap is a diagnosis, not a verdict.',
+    b.forecastAtBaseline > 14
+      ? '🔍 <b>Planning:</b> the plan you baselined already forecast go-live at week ' + b.forecastAtBaseline + ' — the junior PM\'s late finish was never fixed. That flaw was visible before day one. Meridian fixed it in review.'
+      : '✅ <b>Planning:</b> you compressed the first-pass schedule to fit the 14-week constraint before baselining — the single highest-value review finding.',
+    b.budget > 160000
+      ? '🔍 <b>Budget:</b> your baseline cost $' + Math.round(b.budget/1000) + 'K vs the $160K cap — over before you started.'
+      : '✅ <b>Budget:</b> baseline $' + Math.round(b.budget/1000) + 'K respected the $160K cap.',
+    b.overalloc.some(o => o.res === 'r4')
+      ? '🔍 <b>Resources:</b> Paul was overbooked in your baseline. Overallocation slows every task it touches — and it is why he resigned.'
+      : '✅ <b>Resources:</b> no overallocation at baseline — you caught the junior PM\'s classic mistake.',
+    T.crLog.length === 0
+      ? '🔍 <b>Change control:</b> zero change requests — the plan was never updated during execution.'
+      : '✅ <b>Change control:</b> ' + T.crLog.length + ' logged changes — the plan stayed a living document.',
+    T.crunched ? '⚠️ Crunch used — morale ' + Math.round(T.morale) + '%, quality ' + Math.round(T.quality) + '. Velocity crunches every time; look where it got them.' : '✅ No crunch — sustainable pace held.',
+    e && e.CPI < 0.9 ? '⚠️ Final CPI ' + e.CPI.toFixed(2) + ': each planned dollar bought ' + Math.round(e.CPI * 100) + '¢.' : '✅ Cost efficiency held' + (e ? ' (CPI ' + e.CPI.toFixed(2) + ')' : '') + '.'
+  ];
+  const rivalReview = G.rivals.map(T2 => `
+    <h3>${T2.icon} ${T2.name} — ${T2.tag}</h3>
+    <p class="sub">${T2.endReason || ''} Decisions: ${T2.decisions.map(d => '<i>R' + d.round + ':</i> ' + d.label).join(' · ') || 'none'}</p>`).join('');
+  return `
+  <div class="card">
+    <h2>🏁 Final standings — ${CHARTER.projectName}</h2>
+    <p class="sub">${T.endReason}</p>
+    ${podHTML}
+    <table><tr><th>#</th><th>Team</th><th>Score</th><th>Budget /250</th><th>Schedule /250</th><th>Delivery /250</th><th>Quality /250</th><th>Go-live</th><th>Spent</th><th>Criteria</th></tr>${rows}</table>
+    <h3>Success criteria (your project)</h3>
+    <table><tr><th>Criterion</th><th></th></tr>
+      ${criteriaOf(T).map(c => `<tr><td>${c.name}</td><td>${c.ok ? '✅' : '❌'}</td></tr>`).join('')}</table>
+    <h3>Review & analysis</h3>
+    <p class="sub" style="line-height:1.8">${insights.join('<br>')}</p>
+    <h3>How the rivals played it</h3>
+    ${rivalReview}
+    <div style="margin-top:14px"><button class="btn btn-p" onclick="location.reload()">🔄 New season</button></div>
+  </div>`;
+}
+
+render();
+</script>
+</body>
+</html>
