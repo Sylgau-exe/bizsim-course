@@ -5645,6 +5645,7 @@ export default function BizSimHub() {
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn-secondary" onClick={() => window.open('/lab/lifecycle.html', '_blank')}>🧪 {A({ en: 'R&D Lab', fr: 'Labo R&D', es: 'Lab I+D', vi: 'Phòng thí nghiệm R&D' })}</button>
+              <button className="btn-secondary" onClick={() => window.open('/lab/plan.html', '_blank')}>📐 {A({ en: 'Plan/Charter (R&D)', fr: 'Plan/Charte (R&D)', es: 'Plan/Acta (I+D)', vi: 'Kế hoạch/Hiến chương (R&D)' })}</button>
               <button className="btn-primary" onClick={exportCsv}>⬇️ {A({ en: 'Export CSV', fr: 'Exporter CSV', es: 'Exportar CSV', vi: 'Xuất CSV' })}</button>
             </div>
           </div>
