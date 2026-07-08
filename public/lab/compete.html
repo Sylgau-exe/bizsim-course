@@ -368,6 +368,34 @@ const ORIG_DUR = { t1:2,t2:3,t3:3,t4:6,t5:5,t6:3,t7:2,qt1:1,qt2:1,qt3:1,qt4:2,qt
 const CRASH_FACTOR = 0.7;
 const TYPE_LABEL = { scope:'Scope', quality:'Quality', risk:'Risk response', comm:'Communication', proc:'Procurement' };
 function rand(g) { g.rngState = (g.rngState + 0x6D2B79F5) | 0; let t = Math.imul(g.rngState ^ g.rngState >>> 15, 1 | g.rngState); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
+const LEADERS = [
+  { id:'commander', icon:'🎖️', name:'The Commander', style:'Directive', color:'#ef4444',
+    perk:'Crunch & overtime cost half the morale · thrives under pressure',
+    flaw:'Morale drains −1 every round · team building half as effective',
+    path:'Win by speed. The Velocity path — played by someone who can actually afford it.' },
+  { id:'visionary', icon:'✨', name:'The Visionary', style:'Transformational', color:'#a855f7',
+    perk:'Sponsor +3 every round · accepted scope (CR-1) built in half the time',
+    flaw:'Vision is expensive: all labour costs +3%',
+    path:'Win through delivery and sponsor devotion. Say yes, then deliver.' },
+  { id:'servant', icon:'🤝', name:'The Servant Leader', style:'Affiliative', color:'#10b981',
+    perk:'Morale never drops below 60 · immune to flu & recruiter events and raids',
+    flaw:'Executives read kindness as softness: sponsor −2 every round',
+    path:'Win through resilience. The tortoise build — nothing breaks your team.' },
+  { id:'coach', icon:'📣', name:'The Coach', style:'Developing', color:'#3b82f6',
+    perk:'Cross-training completes at baseline · resignations barely slow you · quality tasks credit more',
+    flaw:'Slow start: 90% pace for the first 3 weeks while the team learns',
+    path:'Win late. Weakest at week 3, unstoppable at week 14.' },
+  { id:'diplomat', icon:'🗳️', name:'The Diplomat', style:'Democratic', color:'#f59e0b',
+    perk:'All paid tactics cost 25% less · bidding wars cost you nothing extra',
+    flaw:'Consensus culture: overtime is never an option',
+    path:'Win by working the system — money, influence, and patience.' },
+  { id:'pacesetter', icon:'⚡', name:'The Pacesetter', style:'Lead by example', color:'#ec4899',
+    perk:'Permanent +5% pace · overtime pushes +25% instead of +15%',
+    flaw:'Overtime quality risk doubles · burnout events hit 50% harder',
+    path:'Win on tempo. High risk, high speed, no brakes.' }
+];
+function ldr(T) { return T.leader || ''; }
+function tacticCost(T, base) { return ldr(T) === 'diplomat' ? Math.round(base * 0.75) : base; }
 const WEEKS_PER_ROUND = 3;
 
 // ------------------------- pure plan math (v2) -------------------------
@@ -416,7 +444,10 @@ function pctComplete(plan, progress) {
 }
 function isDoneT(T, id) { const t = T.plan.tasks.find(x => x.id === id); return !!t && !t.cut && (T.progress[id] || 0) >= t.dur - 0.01; }
 function allWorkDone(T) { return T.plan.tasks.every(t => t.cut || (T.progress[t.id] || 0) >= t.dur - 0.01); }
-function mfOf(T) { return Math.min(1.1, Math.max(0.7, 0.7 + 0.004 * T.morale)) * (T.crunchOn ? 1.25 : 1) * (T.tacticPace || 1); }
+function mfOf(T) { let m = Math.min(1.1, Math.max(0.7, 0.7 + 0.004 * T.morale)) * (T.crunchOn ? 1.25 : 1) * (T.tacticPace || 1);
+  if (ldr(T) === 'pacesetter') m *= 1.05;
+  if (ldr(T) === 'coach' && T.week < 4) m *= 0.9;
+  return m; }
 
 function forecastT(T, fromWeek) {
   const p = JSON.parse(JSON.stringify(T.progress)); let w = fromWeek; let guard = 0;
@@ -447,7 +478,8 @@ function newTeam(id, name, icon, color, tag, plan, isPlayer) {
     week:0, progress:{}, doneWeek:{}, spent:0, procCharged:{},
     morale:75, quality:70, sponsorSat:70, crunchOn:false, crunched:0,
     paulGone:false, contractor:false, erpBlown:false,
-    crLog:[], decisions:[], ended:false, terminated:false, goLive:null, endReason:'', lastRank:null };
+    crLog:[], decisions:[], ended:false, terminated:false, goLive:null, endReason:'', lastRank:null,
+    leader:null, leagueBonus:0, tstats:{}, raided:0, poached:0 };
 }
 function lockBaseline(T) {
   T.baseline = { plan: JSON.parse(JSON.stringify(T.plan)), budget: planBudget(T.plan),
@@ -459,7 +491,7 @@ function advanceTeamWeek(T, w) {
   if (T.ended) return;
   T.week = w;
   const { weekCost, overloaded } = simulateWeek(T.plan, T.progress, w, mfOf(T));
-  T.spent += weekCost;
+  T.spent += weekCost * (ldr(T) === 'visionary' ? 1.03 : 1);
   for (const t of T.plan.tasks) {
     if (!t.cut && !T.doneWeek[t.id] && (T.progress[t.id] || 0) >= t.dur - 0.01) {
       T.doneWeek[t.id] = w;
@@ -478,8 +510,9 @@ function advanceTeamWeek(T, w) {
     if (t && !t.cut && !T.procCharged[p.id] && w >= t.start && (T.progress[t.id] || 0) > 0) { T.procCharged[p.id] = true; T.spent += p.cost; }
   }
   for (const t of T.plan.tasks.filter(t => t.type === 'quality')) {
-    if (isDoneT(T, t.id) && !t._qCredited) { t._qCredited = true; T.quality = Math.min(100, T.quality + 3); }
+    if (isDoneT(T, t.id) && !t._qCredited) { t._qCredited = true; T.quality = Math.min(100, T.quality + (ldr(T) === 'coach' ? 5 : 3)); }
   }
+  if (ldr(T) === 'servant') T.morale = Math.max(60, T.morale);
   if (allWorkDone(T)) { T.ended = true; T.goLive = T.doneWeek['t7'] || w; T.endReason = 'All planned work complete — go-live week ' + T.goLive + '.'; }
   else if (w >= 20) { T.ended = true; T.terminated = true; T.endReason = 'Week 20: fiscal year closed six weeks ago — project terminated by steering committee.'; }
   else if (T.spent > 240000) { T.ended = true; T.terminated = true; T.endReason = 'Spend passed $240K (150% of cap) — project terminated by finance.'; }
@@ -494,7 +527,7 @@ const EVENTS = [
     text: T => 'Sarah Chen returns from a leadership offsite wanting a customer analytics dashboard in the launch. Every team in the league received the same call. The charter gives her authority over scope changes >$10K — but the change control process is yours to run.',
     options: [
       { label:'Accept via change control: add "Analytics Dashboard" task (Dev, 2 wks, 100%)', hint:'Scope grows — replan around it. Sponsor +12, delivery value up.',
-        fx(T, w){ T.plan.tasks.push({ id:'cr1', name:'Analytics Dashboard (CR-1)', type:'scope', icon:'📦', start:Math.max(w+1,11), dur:2, res:'r4', alloc:100, dep:'t4' }); T.sponsorSat += 12; crT(T, w, 'CR-1 approved: Analytics Dashboard added to WBS'); } },
+        fx(T, w){ T.plan.tasks.push({ id:'cr1', name:'Analytics Dashboard (CR-1)', type:'scope', icon:'📦', start:Math.max(w+1,11), dur:(ldr(T) === 'visionary' ? 1 : 2), res:'r4', alloc:100, dep:'t4' }); T.sponsorSat += 12; crT(T, w, 'CR-1 approved: Analytics Dashboard added to WBS'); } },
       { label:'Negotiate: Phase 2, two weeks after go-live', hint:'Protects the plan; sponsor mildly disappointed (−5).',
         fx(T){ T.sponsorSat -= 5; } },
       { label:'Decline — cite the week-14 constraint she signed', hint:'Bold. Sponsor −14, morale +2.',
@@ -517,17 +550,17 @@ const EVENTS = [
       return (over ? 'Weeks of overallocation caught up with him. ' : '') + 'Paul (senior developer, hired at a below-market $100/hr) accepted an offer elsewhere — recruiters called every team\'s Paul this week. ' + (xt ? 'Your cross-training sessions ran — his knowledge is documented and shared.' : (hasLive(T, 'rt2') ? 'Cross-training was planned but has not run yet.' : 'Cross-training was cut from the plan — his knowledge walks out with him.')); },
     options: [
       { label:'Backfill from the senior pool ($135/hr market rate)', hint:'Dev work continues at higher cost; +1 wk per dev task if no cross-training.',
-        fx(T, w){ const r4 = T.plan.resources.find(r => r.id === 'r4'); r4.rate = 135; r4.label = 'Sr Dev (backfill, $135/hr)'; T.paulGone = true; const xt = isDoneT(T, 'rt2'); if (!xt) { ['t4','t5','cr1'].forEach(id => { const t = T.plan.tasks.find(x => x.id === id); if (t && !t.cut && (T.progress[id] || 0) < t.dur) t.dur += 1; }); crT(T, w, 'Dev tasks +1 wk each (knowledge loss — no cross-training)'); } crT(T, w, 'Resource r4: Paul → senior pool backfill, $100 → $135/hr'); } },
+        fx(T, w){ const r4 = T.plan.resources.find(r => r.id === 'r4'); r4.rate = 135; r4.label = 'Sr Dev (backfill, $135/hr)'; T.paulGone = true; const xt = isDoneT(T, 'rt2'); if (!xt && ldr(T) !== 'coach') { ['t4','t5','cr1'].forEach(id => { const t = T.plan.tasks.find(x => x.id === id); if (t && !t.cut && (T.progress[id] || 0) < t.dur) t.dur += 1; }); crT(T, w, 'Dev tasks +1 wk each (knowledge loss — no cross-training)'); } crT(T, w, 'Resource r4: Paul → senior pool backfill, $100 → $135/hr'); } },
       { label:'Counter-offer to keep Paul (+$15/hr and a retention bonus $8K)', hint:'Cheaper than backfill — he stays. Morale +4.',
         fx(T, w){ const r4 = T.plan.resources.find(r => r.id === 'r4'); r4.rate = 115; T.spent += 8000; T.morale += 4; crT(T, w, 'Paul retained: $100 → $115/hr + $8K bonus'); } },
       { label:'Spread his work across the team (no backfill)', hint:'No new cost — dev tasks +1-2 wks, morale −10, quality −4.',
-        fx(T, w){ const xt = isDoneT(T, 'rt2'); ['t4','t5','cr1'].forEach(id => { const t = T.plan.tasks.find(x => x.id === id); if (t && !t.cut && (T.progress[id] || 0) < t.dur) t.dur += (xt ? 1 : 2); }); T.morale -= 10; T.quality -= 4; crT(T, w, 'Dev tasks redistributed (+' + (xt ? 1 : 2) + ' wk each), no backfill'); } }
+        fx(T, w){ const xt = isDoneT(T, 'rt2'); ['t4','t5','cr1'].forEach(id => { const t = T.plan.tasks.find(x => x.id === id); if (t && !t.cut && (T.progress[id] || 0) < t.dur) t.dur += (xt || ldr(T) === 'coach' ? 1 : 2); }); T.morale -= 10; T.quality -= 4; crT(T, w, 'Dev tasks redistributed (+' + (xt ? 1 : 2) + ' wk each), no backfill'); } }
     ] },
   { round:4, icon:'🏁', title:'Steering committee — fiscal year-end is week 14',
     text: T => 'GO/NO-GO checkpoint for the whole league. Your live forecast says go-live ≈ week ' + forecastT(T, T.week) + '. The steering committee reminds every team that fiscal year-end (week 14) is contractual for the cloud budget.',
     options: [
       { label:'Crunch the final stretch (+25% pace)', hint:'Morale −15, quality −5. The oldest trade in the book.',
-        fx(T, w){ T.crunchOn = true; T.crunched++; T.morale -= 15; T.quality -= 5; crT(T, w, 'Crunch authorized for final stretch'); } },
+        fx(T, w){ T.crunchOn = true; T.crunched++; T.morale -= (ldr(T) === 'commander' ? 7 : 15); T.quality -= 5; crT(T, w, 'Crunch authorized for final stretch'); } },
       { label:'Hold the plan and present the forecast with variance analysis', hint:'If your maths says ≤14, this is the professional answer (+10 sponsor). If not: −12.',
         fx(T){ const f = forecastT(T, T.week); T.sponsorSat += (f <= 14 ? 10 : -12); } },
       { label:'Cut every remaining non-core task to guarantee the date', hint:'Quality/risk/comm tasks not yet done are removed. Consequences at closing.',
@@ -539,16 +572,26 @@ const EVENTS = [
 const TACTICS = [
   { id:'none', icon:'🧘', name:'Steady hands', desc:'No play this round — save the money, hold the course.',
     fx(){} },
-  { id:'teambuild', icon:'🍕', name:'Team building — $3K', desc:'Morale +8. A fed team is a fast team.',
-    fx(T){ T.spent += 3000; T.morale = Math.min(100, T.morale + 8); } },
+  { id:'teambuild', icon:'🍕', name:'Team building — $3K', desc:'Morale +8. A fed team is a fast team. Also repels this round\'s poachers.',
+    fx(T){ T.spent += tacticCost(T, 3000); T.morale = Math.min(100, T.morale + (ldr(T) === 'commander' ? 4 : 8)); } },
   { id:'overtime', icon:'⏰', name:'Overtime push', desc:'+15% pace this round · morale −6 · 25% risk of quality −4.',
-    fx(T, g){ T.tacticPace = 1.15; T.morale = Math.max(10, T.morale - 6); if (rand(g) < 0.25) T.quality -= 4; } },
+    fx(T, g){ T.tacticPace = ldr(T) === 'pacesetter' ? 1.25 : 1.15; T.morale = Math.max(10, T.morale - (ldr(T) === 'commander' ? 3 : 6)); if (rand(g) < (ldr(T) === 'pacesetter' ? 0.5 : 0.25)) T.quality -= 4; } },
   { id:'quality', icon:'🔍', name:'Quality sweep — $4K', desc:'Quality +5. Fix it before UAT finds it.',
-    fx(T){ T.spent += 4000; T.quality = Math.min(100, T.quality + 5); } },
+    fx(T){ T.spent += tacticCost(T, 4000); T.quality = Math.min(100, T.quality + 5); } },
   { id:'lunch', icon:'🥂', name:'Executive lunch — $2K', desc:'Sponsor +6. Relationships are requirements too.',
-    fx(T){ T.spent += 2000; T.sponsorSat += 6; } },
+    fx(T){ T.spent += tacticCost(T, 2000); T.sponsorSat += 6; } },
+  { id:'poach', icon:'🕵️', name:'Poach the leader — $6K', desc:'Send recruiters at the top rival. 55%: their dev work slips a week and their payroll jumps. 45%: word gets out (sponsor −4).',
+    fx(T, g){ T.spent += tacticCost(T, 6000);
+      const target = g.teams.filter(x => !x.isPlayer && !x.ended).sort((a, b) => projectScore(b).total - projectScore(a).total)[0];
+      if (!target) return;
+      if (rand(g) < 0.55) {
+        ['t4','t5','cr1'].forEach(id => { const t = target.plan.tasks.find(x => x.id === id); if (t && !t.cut && (target.progress[id] || 0) < t.dur) t.dur += 1; });
+        const r4 = target.plan.resources.find(r => r.id === 'r4'); if (r4) r4.rate += 15;
+        target.raided++; T.poached++;
+        g.news.unshift({ week:g.week, icon:'🕵️', team:T.name, text:'Poaching raid hit ' + target.name + ' — their dev work slips, their payroll jumps' });
+      } else { T.sponsorSat -= 4; g.news.unshift({ week:g.week, icon:'🕵️', team:T.name, text:'Poaching attempt on ' + target.name + ' leaked — the sponsor is not amused' }); } } },
   { id:'skunk', icon:'🎲', name:'Skunkworks sprint — $5K', desc:'50/50 gamble: a remaining scope task loses 1 week free — or quality −5.',
-    fx(T, g){ T.spent += 5000;
+    fx(T, g){ T.spent += tacticCost(T, 5000);
       if (rand(g) < 0.5) { const c = T.plan.tasks.filter(t => !t.cut && t.dur > 1 && t.type === 'scope' && (T.progress[t.id] || 0) < t.dur - 0.01);
         if (c.length) { const t = c[Math.floor(rand(g) * c.length)]; t.dur -= 1; t.origAdj = (t.origAdj || 0) + 1; crT(T, T.week, 'Skunkworks paid off: "' + t.name + '" −1 wk (no premium)'); } }
       else { T.quality -= 5; crT(T, T.week, 'Skunkworks backfired: quality −5'); } } }
@@ -562,11 +605,11 @@ function aiTactic(T, g) {
   return 'none';
 }
 const MICRO_EVENTS = [
-  { icon:'🤧', title:'Flu goes around the office — overloaded teams hit hardest', apply(T, g){ const over = overallocation(T.plan).some(o => o.week === g.week + 1); T.morale = Math.max(10, T.morale - (over ? 7 : 4)); } },
+  { icon:'🤧', title:'Flu goes around the office — overloaded teams hit hardest', apply(T, g){ if (ldr(T) === 'servant') return; const over = overallocation(T.plan).some(o => o.week === g.week + 1); T.morale = Math.max(10, T.morale - (over ? 7 : 4) * (ldr(T) === 'pacesetter' ? 1.5 : 1)); } },
   { icon:'💸', title:'Cloud vendor announces a discount', apply(T){ const p = T.plan.procItems.find(x => x.id === 'p1'); if (p && !T.procCharged['p1']) p.cost = Math.max(0, p.cost - 2000); } },
   { icon:'📰', title:'Trade press praises the portal program — sponsors glow', apply(T){ T.sponsorSat += 5; } },
   { icon:'📦', title:'Hardware delivery slips a week', apply(T){ const t = T.plan.tasks.find(x => x.id === 'pt1'); if (t && !t.cut && (T.progress['pt1'] || 0) < t.dur - 0.01) t.dur += 1; } },
-  { icon:'📞', title:'Recruiters circle every team — tired people listen', apply(T){ T.morale = Math.max(10, T.morale - (T.morale < 50 ? 6 : 3)); } },
+  { icon:'📞', title:'Recruiters circle every team — tired people listen', apply(T){ if (ldr(T) === 'servant') return; T.morale = Math.max(10, T.morale - (T.morale < 50 ? 6 : 3) * (ldr(T) === 'pacesetter' ? 1.5 : 1)); } },
   { icon:'🏖️', title:'Long weekend — everyone slows down a touch', apply(T){ T.tacticPace = (T.tacticPace || 1) * 0.95; } }
 ];
 
@@ -647,7 +690,8 @@ function finalScore(T) {
   const secGap = T.goLive && !(isDoneT(T, 'qt5') && isDoneT(T, 'pt2')) ? 60 : 0; // security findings post-launch
   const delivery = Math.max(0, Math.min(250, Math.round(gotVal / totVal * 170) + (isDoneT(T, 't6') ? 40 : 0) + (isDoneT(T, 'ct2') ? 40 : 0)) - perfGap);
   const quality = Math.max(0, Math.min(250, Math.round(Math.max(0, T.quality) * 1.7) + (isDoneT(T, 'qt5') ? 25 : 0) + (isDoneT(T, 'pt2') ? 25 : 0) + (isDoneT(T, 'qt3') ? 30 : 0)) - secGap);
-  const total = budget + schedule + delivery + quality;
+  const sponsorBonus = Math.max(0, Math.min(25, Math.round((T.sponsorSat - 70) / 2)));
+  const total = budget + schedule + delivery + quality + (T.leagueBonus || 0) + sponsorBonus;
   const grade = total >= 850 ? 'S' : total >= 750 ? 'A' : total >= 650 ? 'B' : total >= 550 ? 'C' : total >= 450 ? 'D' : 'F';
   return { budget, schedule, delivery, quality, total, grade };
 }
@@ -693,21 +737,50 @@ function applyAIEvent(G, ev) {
 function leagueRound(G, playerTactic) {
   G.round++;
   if (playerTactic && !G.player.ended) { const tc = TACTICS.find(t => t.id === playerTactic);
-    if (tc) { tc.fx(G.player, G); if (tc.id !== 'none') G.news.unshift({ week:G.week, icon:'🎓', team:'Your Team', text:tc.icon + ' ' + tc.name }); } }
+    if (tc) { tc.fx(G.player, G); G.player.tstats[tc.id] = (G.player.tstats[tc.id] || 0) + 1;
+      if (tc.id !== 'none') G.news.unshift({ week:G.week, icon:'🎓', team:'Your Team', text:tc.icon + ' ' + tc.name }); } }
   for (const T of G.rivals) { const id = aiTactic(T, G);
-    if (id && id !== 'none') { const tc = TACTICS.find(t => t.id === id); tc.fx(T, G); G.news.unshift({ week:G.week, icon:T.icon, team:T.name, text:tc.icon + ' ' + tc.name }); } }
+    if (id && id !== 'none') { const tc = TACTICS.find(t => t.id === id); tc.fx(T, G); T.tstats[id] = (T.tstats[id] || 0) + 1; G.news.unshift({ week:G.week, icon:T.icon, team:T.name, text:tc.icon + ' ' + tc.name }); } }
+  // leader style round drifts (player only — rivals' styles are baked into their archetypes)
+  const L = G.player;
+  if (!L.ended) {
+    if (ldr(L) === 'commander') L.morale = Math.max(10, L.morale - 1);
+    if (ldr(L) === 'visionary') L.sponsorSat += 3;
+    if (ldr(L) === 'servant') L.sponsorSat -= 2;
+  }
   if (rand(G) < 0.45) { const me = MICRO_EVENTS[Math.floor(rand(G) * MICRO_EVENTS.length)];
     for (const T of G.teams) if (!T.ended) me.apply(T, G);
     G.news.unshift({ week:G.week, icon:me.icon, team:'League news', text:me.title }); }
+  if (!G.milestones) G.milestones = { market:null, quality:null };
   for (let i = 0; i < WEEKS_PER_ROUND; i++) {
     if (G.teams.every(t => t.ended)) break;
     G.week++;
     for (const T of G.teams) advanceTeamWeek(T, G.week);
+    // first-to-milestone races
+    if (!G.milestones.market) { const w = G.teams.filter(T => isDoneT(T, 't7')).sort((a, b) => (a.doneWeek['t7'] || 99) - (b.doneWeek['t7'] || 99))[0];
+      if (w) { G.milestones.market = w.id; w.leagueBonus += 40; G.news.unshift({ week:G.week, icon:'🏁', team:'League news', text:w.icon + ' ' + w.name + ' hits the MARKET WINDOW first — +40 league bonus!' }); } }
+    if (!G.milestones.quality) { const w = G.teams.filter(T => isDoneT(T, 'qt5') && isDoneT(T, 'pt2'))[0];
+      if (w) { G.milestones.quality = w.id; w.leagueBonus += 30; G.news.unshift({ week:G.week, icon:'🥇', team:'League news', text:w.icon + ' ' + w.name + ' takes the QUALITY CUP (first verified security) — +30 league bonus!' }); } }
   }
   for (const T of G.teams) T.tacticPace = 1;
   // snapshot ranks
   const ranked = [...G.teams].sort((a, b) => projectScore(b).total - projectScore(a).total);
   ranked.forEach((T, i) => { T.prevRank = T.lastRank; T.lastRank = i + 1; });
+  // success attracts attention: the leader pays a tax, the trailer gets a break
+  const top = ranked.find(T => !T.ended), bottom = [...ranked].reverse().find(T => !T.ended);
+  if (top && bottom && top !== bottom && rand(G) < 0.35) {
+    const roll = rand(G);
+    if (roll < 0.34) { top.spent += 3000; G.news.unshift({ week:G.week, icon:'🧾', team:'League news', text:'Auditors visit the league leader ' + top.icon + ' ' + top.name + ' — $3K compliance costs' }); }
+    else if (roll < 0.67) { top.sponsorSat -= 3; G.news.unshift({ week:G.week, icon:'📈', team:'League news', text:'Expectations rise on ' + top.icon + ' ' + top.name + ' — the sponsor wants more' }); }
+    else {
+      const shielded = ldr(top) === 'servant' || top.morale >= 75 || (top.isPlayer && playerTactic === 'teambuild');
+      if (shielded) G.news.unshift({ week:G.week, icon:'🛡️', team:'League news', text:'Recruiters raid ' + top.icon + ' ' + top.name + ' — repelled! (strong team culture)' });
+      else { ['t4','t5','cr1'].forEach(id => { const t = top.plan.tasks.find(x => x.id === id); if (t && !t.cut && (top.progress[id] || 0) < t.dur) t.dur += 1; });
+        top.morale = Math.max(10, top.morale - 4); top.raided++;
+        G.news.unshift({ week:G.week, icon:'🕵️', team:'League news', text:'Recruiters raid the leader ' + top.icon + ' ' + top.name + ' — dev work slips a week' }); } }
+    bottom.morale = Math.min(100, bottom.morale + 4);
+    G.news.unshift({ week:G.week, icon:'💪', team:'League news', text:bottom.icon + ' ' + bottom.name + ' has nothing to lose — morale +4' });
+  }
   const ev = EVENTS.find(e => e.round === G.round);
   if (ev && !G.player.ended) { G.pendingEvent = ev; G.eventResolved = false; applyAIEvent(G, ev); }
   else { G.pendingEvent = null; G.eventResolved = true; if (ev) applyAIEvent(G, ev); }
@@ -872,7 +945,17 @@ function charterHTML() {
       <dt>Authority</dt><dd>${CHARTER.authority}</dd>
     </dl>${accept}`;
 }
-window.acceptCharter = () => { G.phase = 'planning'; uiPopup = null; saveGame(); render(); toast('Charter accepted — fix the junior PM\'s plan, then lock your baseline.'); };
+window.acceptCharter = () => { uiPopup = 'leader'; render(); };
+window.pickLeader = (id) => { G.player.leader = id; G.phase = 'planning'; uiPopup = null;
+  if (id === 'coach') { const rt2 = G.player.plan.tasks.find(t => t.id === 'rt2'); if (rt2) rt2._coachAuto = true; }
+  saveGame(); render(); toast(LEADERS.find(l => l.id === id).icon + ' ' + LEADERS.find(l => l.id === id).name + ' — now fix the plan and lock your baseline.'); };
+function leaderSelectHTML() {
+  return `<p class="sub" style="font-size:1rem">Who are you as a leader? Each style has a real strength, a real cost, and a different path to the podium. (Based on Goleman's six leadership styles — your closing review will tell you which one you <i>actually</i> played.)</p>
+  <div class="tactic-grid">${LEADERS.map(l => `<button class="tactic" style="border-top:5px solid ${l.color}" onclick="pickLeader('${l.id}')">
+    <span class="ticon">${l.icon}</span><b>${l.name}</b>
+    <small style="text-transform:uppercase;letter-spacing:.06em;font-weight:900;color:${l.color}">${l.style}</small>
+    <small>✅ ${l.perk}</small><small>⚠️ ${l.flaw}</small><small style="color:#6b7194"><i>${l.path}</i></small></button>`).join('')}</div>`;
+}
 
 // ---------------- task popup ----------------
 function taskHTML() {
@@ -968,6 +1051,34 @@ function podiumStageHTML() {
       <button class="btn btn-p" onclick="openPopup('final')">📊 Full scorecard & season review</button>
     </div>`;
 }
+function verdictOf(T) {
+  const ts = T.tstats || {}, ot = (ts.overtime || 0) + (T.crunched || 0);
+  const cuts = T.crLog.filter(c => /^Cut:/.test(c.text) || /Cut: /.test(c.text)).length;
+  let v;
+  if ((ts.skunk || 0) + (ts.poach || 0) >= 3) v = { icon:'🎲', name:'The Gambler', line:'Every coin had two sides and you flipped them all. Sometimes it even worked.' };
+  else if (cuts >= 3) v = { icon:'🗡️', name:'The Machiavellian', line:'Scope, safeguards, promises — all negotiable. The date was not.' };
+  else if (ot >= 3) v = { icon:'⚡', name:'The Taskmaster', line:'You bought speed with people. Check what it cost: morale ' + Math.round(T.morale) + '%.' };
+  else if ((ts.teambuild || 0) >= 2 && T.morale >= 70) v = { icon:'🤝', name:'The People-First Leader', line:'Your team finished the season still liking their jobs. Rarer than it sounds.' };
+  else if ((ts.quality || 0) >= 2 && T.quality >= 78) v = { icon:'🔍', name:'The Craftsman', line:'You shipped something you are not afraid of. UAT agrees.' };
+  else v = { icon:'🧭', name:'The Steady Hand', line:'No drama, no heroics — just a plan, maintained. Textbook Monitoring & Controlling.' };
+  const L = LEADERS.find(l => l.id === T.leader);
+  const match = L ? ((L.id === 'servant' && v.name === 'The People-First Leader') || (L.id === 'commander' && v.name === 'The Taskmaster') || (L.id === 'coach' && v.name === 'The Craftsman') || (L.id === 'diplomat' && v.name === 'The Steady Hand') || (L.id === 'pacesetter' && v.name === 'The Taskmaster')) : null;
+  const mirror = L ? (match ? `You chose ${L.icon} ${L.name} — and you played it. Style and behaviour aligned.` : `You chose ${L.icon} ${L.name}… and played ${v.name}. Goleman would like a word — the gap between declared and practiced style is the most common leadership blind spot.`) : '';
+  return { v, mirror };
+}
+function recapHTML() {
+  const T = G.player;
+  const items = [];
+  const b = T.baseline;
+  items.push('Wk 0 — Baseline locked: $' + Math.round(b.budget/1000) + 'K, forecast wk ' + b.forecastAtBaseline + (b.overalloc.length ? ', ' + b.overalloc.length + ' overallocation slots left in' : ', clean loading') + '.');
+  T.decisions.forEach(d => { const ev = EVENTS.find(e => e.round === d.round); items.push('R' + d.round + ' — ' + (ev ? ev.icon + ' ' + ev.title + ' → ' : '') + d.label); });
+  if (G.milestones) { if (G.milestones.market) { const w = G.teams.find(t => t.id === G.milestones.market); items.push('🏁 Market window: ' + w.icon + ' ' + w.name + (w.isPlayer ? ' (YOU — +40)' : '')); }
+    if (G.milestones.quality) { const w = G.teams.find(t => t.id === G.milestones.quality); items.push('🥇 Quality cup: ' + w.icon + ' ' + w.name + (w.isPlayer ? ' (YOU — +30)' : '')); } }
+  if (T.raided) items.push('🕵️ Your team was raided ' + T.raided + ' time(s) by recruiters.');
+  if (T.poached) items.push('🕵️ Your recruiters landed ' + T.poached + ' successful raid(s) on rivals.');
+  items.push((T.terminated ? '💥 ' : '🏁 ') + T.endReason);
+  return `<div class="log" style="max-height:none">${items.map(i => '<div>' + i + '</div>').join('')}</div>`;
+}
 function finalHTML() {
   const scored = G.teams.map(T => ({ T, s: finalScore(T) })).sort((a, b) => b.s.total - a.s.total);
   const rows = scored.map((x, i) => {
@@ -1001,7 +1112,16 @@ function finalHTML() {
   const rivalReview = G.rivals.map(T2 => `
     <h3>${T2.icon} ${T2.name} — ${T2.tag}</h3>
     <p class="sub">${T2.endReason || ''} Decisions: ${T2.decisions.map(d => '<i>R' + d.round + ':</i> ' + d.label).join(' · ') || 'none'}</p>`).join('');
-  return `${standingsHTML(true)}
+  const { v, mirror } = verdictOf(T);
+  return `<div style="text-align:center;background:linear-gradient(100deg,#eef2ff,#faf5ff);border-radius:18px;padding:18px;margin-bottom:14px">
+      <div style="font-size:2.6rem">${v.icon}</div>
+      <div style="font-size:1.3rem;font-weight:900">What kind of PM were you? ${v.name}</div>
+      <p class="sub" style="margin:6px 0 0">${v.line}</p>
+      ${mirror ? `<p class="sub" style="margin:8px 0 0;font-weight:800;color:#5b4bc4">${mirror}</p>` : ''}
+    </div>
+    <h3>📖 Your season, week by week</h3>
+    ${recapHTML()}
+    ${standingsHTML(true)}
     <table><tr><th>#</th><th>Team</th><th>Score</th><th>Budget /250</th><th>Schedule /250</th><th>Delivery /250</th><th>Quality /250</th><th>Go-live</th><th>Spent</th><th>Criteria</th></tr>${rows}</table>
     <h3>Success criteria (your project)</h3>
     <table><tr><th>Criterion</th><th></th></tr>
@@ -1020,6 +1140,8 @@ function ribbonHTML() {
   const rank = [...G.teams].sort((a, b) => projectScore(b).total - projectScore(a).total).findIndex(x => x.isPlayer) + 1;
   const proj = T.baseline ? projectScore(T).total : null;
   const chips = [];
+  const L = LEADERS.find(l => l.id === T.leader);
+  if (L) chips.push(`<span class="chip" title="${L.name} — ${L.style}. ${L.perk}. Flaw: ${L.flaw}" style="background:${L.color}">${L.icon} ${L.name.replace('The ','')}</span>`);
   chips.push(`<span class="chip" title="Charter cap: week 14">📅 Wk ${G.week} / 14</span>`);
   chips.push(`<span class="chip ${budget > 160000 ? 'alert' : ''}" onclick="openPopup('reports')" title="${T.baseline ? 'Spent' : 'Planned'} vs $160K cap">💰 $${Math.round(budget/1000)}K / 160</span>`);
   if (e) chips.push(`<span class="chip ${e.SPI < 0.85 ? 'alert' : ''}" onclick="openPopup('reports')">⏱ SPI ${e.SPI.toFixed(2)}</span>`);
@@ -1096,6 +1218,10 @@ function guideHTML() {
   <p class="sub">Week vs the 14-week charter cap · spend vs the $160K cap · SPI/CPI (schedule & cost efficiency vs YOUR baseline) · quality · morale · sponsor · your rank and projected score. Red chip = trouble. Click a chip for the full report.</p>
   <h3>🏁 The league strip</h3>
   <p class="sub">All five teams live: % built and projected final score (1000 pts = Budget 250 · Schedule 250 · Delivery 250 · Quality 250). Rivals face the same events you do.</p>
+  <h3>👤 Leadership styles</h3>
+  <p class="sub">After accepting the charter you choose who you are: Commander, Visionary, Servant Leader, Coach, Diplomat or Pacesetter (Goleman's six styles). Each has a real perk, a real flaw, and a different winning path. At closing, the game tells you which style you <i>actually played</i>.</p>
+  <h3>⚔️ The league fights back</h3>
+  <p class="sub">First team to go-live claims the Market Window (+40); first verified security takes the Quality Cup (+30) — rivals' progress bars are threats. The league leader attracts auditors, sponsor expectations and recruiter raids (high morale or fresh team building repels them). And your 🕵️ Poach tactic sends recruiters at the top rival. Sponsor satisfaction above 70 is worth up to +25 at closing.</p>
   <h3>🎯 Round tactics</h3>
   <p class="sub">Every round you pick one play: team building, overtime, quality sweep, executive lunch, a skunkworks gamble — or hold steady. Rivals play their own style, and league-wide micro-events (flu, vendor discounts, long weekends) hit everyone. Same seed = same season; every new game rolls differently.</p>
   <h3>▶ End week</h3>
@@ -1103,14 +1229,15 @@ function guideHTML() {
   <h3>🏆 Winning</h3>
   <p class="sub">Highest score at season end takes the podium. Meridian Group scores ~836 — beat that and you have beaten the engine.</p>`;
 }
-const POPUP_TITLES = { tactics:'🎯 Choose your play — weeks ' , guide:'❓ How to play', charter:'📜 Project Charter — ' , plan:'📐 Living project plan', reports:'📊 Monitor & Control', changes:'📋 Change control', standings:'🏆 League standings', scout:'🔭 Scouting reports', task:'', final:'🏁 Season review' };
+const POPUP_TITLES = { leader:'👤 Choose your leadership style', tactics:'🎯 Choose your play — weeks ' , guide:'❓ How to play', charter:'📜 Project Charter — ' , plan:'📐 Living project plan', reports:'📊 Monitor & Control', changes:'📋 Change control', standings:'🏆 League standings', scout:'🔭 Scouting reports', task:'', final:'🏁 Season review' };
 window.openPopup = k => { uiPopup = k; render(); };
 window.closePopup = () => { uiPopup = null; taskIdx = -1; render(); };
 function popupHTML() {
   if (!uiPopup) return '';
   let title = POPUP_TITLES[uiPopup] || '';
   let body = '';
-  if (uiPopup === 'tactics') { title += (G.week + 1) + '–' + (G.week + WEEKS_PER_ROUND); body = tacticsHTML(); }
+  if (uiPopup === 'leader') body = leaderSelectHTML();
+  else if (uiPopup === 'tactics') { title += (G.week + 1) + '–' + (G.week + WEEKS_PER_ROUND); body = tacticsHTML(); }
   else if (uiPopup === 'charter') { title += CHARTER.projectName; body = charterHTML(); }
   else if (uiPopup === 'plan') body = planEditorHTML(G.phase === 'execution') ;
   else if (uiPopup === 'reports') body = mcHTML();
@@ -1161,7 +1288,9 @@ window.doEndWeek = () => {
   const T = G.player;
   if (G.phase === 'initiation') { openPopup('charter'); return; }
   if (G.phase === 'planning') {
-    lockBaseline(T); G.phase = 'execution'; G.pendingEvent = null; G.eventResolved = true;
+    lockBaseline(T);
+    if (ldr(T) === 'coach') { const rt2 = T.plan.tasks.find(x => x.id === 'rt2'); if (rt2 && !rt2.cut) { T.progress['rt2'] = rt2.dur; T.doneWeek['rt2'] = 0; crT(T, 0, 'Coach perk: cross-training complete at baseline'); } }
+    G.phase = 'execution'; G.pendingEvent = null; G.eventResolved = true;
     saveGame(); render(); toast('Baseline locked. Five teams, one standing — good luck.'); return;
   }
   if (G.phase === 'closing') { clearSave(); location.reload(); return; }
@@ -1185,8 +1314,10 @@ window.runRoundWith = (tacticId) => {
   });
 };
 function tacticsHTML() {
-  return `<p class="sub" style="font-size:1rem">Pick this round's play — one tactical move before the weeks run. Rivals are choosing theirs too.</p>
-  <div class="tactic-grid">${TACTICS.map(t => `<button class="tactic" onclick="runRoundWith('${t.id}')"><span class="ticon">${t.icon}</span><b>${t.name}</b><small>${t.desc}</small></button>`).join('')}</div>
+  const L = LEADERS.find(l => l.id === G.player.leader);
+  const list = TACTICS.filter(t => !(t.id === 'overtime' && ldr(G.player) === 'diplomat'));
+  return `<p class="sub" style="font-size:1rem">${L ? L.icon + ' <b>' + L.name + '</b> — ' : ''}Pick this round's play. Rivals are choosing theirs too.${ldr(G.player) === 'diplomat' ? ' <i>(Overtime is never an option under consensus leadership — but everything paid costs you 25% less.)</i>' : ''}</p>
+  <div class="tactic-grid">${list.map(t => `<button class="tactic" onclick="runRoundWith('${t.id}')"><span class="ticon">${t.icon}</span><b>${t.name}</b><small>${t.desc}</small></button>`).join('')}</div>
   <p class="sub" style="margin-top:12px">Costs go on your project spend — they count against the $160K cap and your budget score.</p>`;
 }
 
