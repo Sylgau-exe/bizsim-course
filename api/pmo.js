@@ -37,6 +37,18 @@ async function ensureTables() {
         id SERIAL PRIMARY KEY, tenant_id VARCHAR(120), action VARCHAR(120),
         details JSONB, user_name VARCHAR(255), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`;
+    await sql`CREATE TABLE IF NOT EXISTS rd_cbl_state (
+        tenant_id VARCHAR(120) PRIMARY KEY,
+        projects JSONB DEFAULT '[]',
+        people JSONB DEFAULT '[]',
+        assignments JSONB DEFAULT '{}',
+        triage_items JSONB DEFAULT '[]',
+        criteria_weights JSONB DEFAULT '{}',
+        criteria JSONB,
+        custom_functions JSONB DEFAULT '[]',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_by VARCHAR(255)
+    )`;
     const teams = await sql`SELECT COUNT(*) as cnt FROM rd_pmo_state`;
     if (parseInt(teams[0].cnt) === 0) {
         for (const [tid, name] of [['team-alpha','Alpha'],['team-bravo','Bravo'],['team-charlie','Charlie'],['team-delta','Delta']]) {
@@ -169,6 +181,43 @@ async function handleAdmin(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
 }
 
+async function handleCblState(req, res) {
+    const tenantId = req.query.tenant || 'default';
+    if (req.method === 'GET') {
+        const result = await sql`
+            SELECT projects, people, assignments, triage_items, criteria_weights, criteria, custom_functions, updated_at, updated_by
+            FROM rd_cbl_state WHERE tenant_id = ${tenantId}`;
+        if (result.length === 0) {
+            await sql`INSERT INTO rd_cbl_state (tenant_id) VALUES (${tenantId})`;
+            return res.status(200).json({ projects: [], people: [], assignments: {}, triageItems: [], criteriaWeights: {}, criteria: null, customFunctions: [], updatedAt: new Date().toISOString(), updatedBy: null });
+        }
+        const row = result[0];
+        return res.status(200).json({
+            projects: row.projects || [], people: row.people || [], assignments: row.assignments || {},
+            triageItems: row.triage_items || [], criteriaWeights: row.criteria_weights || {},
+            criteria: row.criteria || null, customFunctions: row.custom_functions || [],
+            updatedAt: row.updated_at, updatedBy: row.updated_by });
+    }
+    if (req.method === 'POST') {
+        const state = req.body;
+        const userName = req.headers['x-user-name'] || null;
+        await sql`INSERT INTO rd_cbl_state (tenant_id) VALUES (${tenantId}) ON CONFLICT (tenant_id) DO NOTHING`;
+        const result = await sql`
+            UPDATE rd_cbl_state SET
+                projects = ${JSON.stringify(state.projects || [])},
+                people = ${JSON.stringify(state.people || [])},
+                assignments = ${JSON.stringify(state.assignments || {})},
+                triage_items = ${JSON.stringify(state.triageItems || [])},
+                criteria_weights = ${JSON.stringify(state.criteriaWeights || {})},
+                criteria = ${JSON.stringify(state.criteria || [])},
+                custom_functions = ${JSON.stringify(state.customFunctions || [])},
+                updated_at = NOW(), updated_by = ${userName}
+            WHERE tenant_id = ${tenantId} RETURNING updated_at`;
+        return res.status(200).json({ success: true, updatedAt: result[0]?.updated_at });
+    }
+    return res.status(405).json({ error: 'Method not allowed' });
+}
+
 export default async function handler(req, res) {
     cors(res);
     if (req.method === 'OPTIONS') return res.status(200).end();
@@ -176,6 +225,7 @@ export default async function handler(req, res) {
         await ensureTables();
         const fn = req.query.fn;
         if (fn === 'state') return await handleState(req, res);
+        if (fn === 'cblstate') return await handleCblState(req, res);
         if (fn === 'auth') return await handleAuth(req, res);
         if (fn === 'admin') return await handleAdmin(req, res);
         return res.status(400).json({ error: 'Missing or unknown fn (state|auth|admin)' });
