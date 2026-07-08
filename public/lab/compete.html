@@ -1270,6 +1270,14 @@ window.decide = (i) => {
   const ev = G.pendingEvent; if (!ev) return;
   ev.options[i].fx(G.player, G.week); G.eventResolved = true;
   G.player.decisions.push({ round:ev.round, label:ev.options[i].label });
+  // contested resource: the integration contractor goes to a bidding war
+  if (ev.round === 2) {
+    const buyers = G.teams.filter(T => (T.isPlayer ? i === 1 : (T.decisions.find(d => d.round === 2) || {}).label === ev.options[1].label) && !T.ended);
+    if (buyers.length > 1) {
+      for (const T of buyers) { if (T.isPlayer && ldr(T) === 'diplomat') continue; T.spent += 4000 * (buyers.length - 1); }
+      G.news.unshift({ week:G.week, icon:'💰', team:'League news', text:'BIDDING WAR: ' + buyers.length + ' teams want the same integration contractor — price +$' + (4 * (buyers.length - 1)) + 'K each' + (ldr(G.player) === 'diplomat' && buyers.some(b => b.isPlayer) ? ' (your Diplomat negotiated the surcharge away)' : '') });
+    }
+  }
   saveGame(); render(); toast('Decision recorded — replan if needed, then end the week.');
 };
 
